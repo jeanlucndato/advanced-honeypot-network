@@ -14,13 +14,18 @@ import (
 )
 
 func StartSSHServer(port string) {
-	config := &ssh.ServerConfig{event.GlobalBus.Publish(types.Event{
-    AttackerIP: c.RemoteAddr().String(),
-    Service:    "ssh",
-    EventType:  "auth_attempt",
-    Username:   c.User(),
-    Payload:    string(pass),
-})
+	config := &ssh.ServerConfig{
+		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
+			event.GlobalBus.Publish(types.Event{
+				AttackerIP: c.RemoteAddr().String(),
+				Service:    "ssh",
+				EventType:  "auth_attempt",
+				Username:   c.User(),
+				Payload:    string(pass),
+			})
+			// Accept all passwords to let them into the honeypot
+			return nil, nil
+		},
 	}
 
 	_, priv, _ := ed25519.GenerateKey(rand.Reader)
@@ -113,7 +118,13 @@ func runFakeShell(channel ssh.Channel, sshConn *ssh.ServerConn) {
 				
 				if cmd != "" {
 					// LOG DE LA COMMANDE EXÉCUTÉE
-					fmt.Printf("💻 [SSH CMD] IP: %s | Command: %s\n", sshConn.RemoteAddr().String(), cmd)
+					event.GlobalBus.Publish(types.Event{
+						AttackerIP: sshConn.RemoteAddr().String(),
+						Service:    "ssh",
+						EventType:  "command_exec",
+						Username:   sshConn.User(),
+						Payload:    cmd,
+					})
 					
 					// Traitement des fausses commandes
 					switch cmd {
