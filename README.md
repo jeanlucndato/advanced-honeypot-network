@@ -95,7 +95,15 @@ To run the platform locally and see the real-time event stream in action:
    *Navigate to `http://localhost:5173` in your browser.*
 
 3. **Simulate an Attack:**
-   Open a new terminal window and connect to your own honeypot:
+   Open a new terminal window and connect to your own honeypot. 
+   
+   *Note: If you get a "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!" error, it is because the honeypot generates its own SSH keys which conflict with previously saved keys for localhost on port 2222. Run these commands to clear the old keys and make the connection work:*
+   ```bash
+   ssh-keygen -f '/home/tanos/.ssh/known_hosts' -R '[127.0.0.1]:2222'
+   ssh-keygen -f '/home/tanos/.ssh/known_hosts' -R '[localhost]:2222'
+   ```
+
+   Then, connect to the honeypot:
    ```bash
    ssh root@localhost -p 2222
    ```
