@@ -9,6 +9,8 @@
 
 Designed to process thousands of attack events simultaneously, **Hive** relies on a modern architecture built for performance, scalability, and threat intelligence. The project pairs a lightning-fast **Go** backend with a reactive **React 19** frontend dashboard to attract, capture, and analyze attacker behavior.
 
+![Hive React Dashboard](img/frontend%20dashbord.png)
+
 ---
 
 ## 🎯 Executive Summary
@@ -108,6 +110,19 @@ To run the platform locally and watch the attacks in real-time:
    - MITRE techniques (e.g., T1105) are identified automatically.
    - The file `iptables-blocklist.txt` is automatically generated with your IP address ready to be dropped.
    - The file `threat-intel.stix.json` captures your Indicators of Compromise (IOCs).
+
+---
+
+## 📸 Screenshots
+
+### Go Backend — All Honeypots Running
+![Go Backend Terminal](img/Go%20terminal.png)
+
+### SSH Honeypot — Live Attacker Session
+![SSH Terminal Session](img/terminal%20ssh.png)
+
+### React Dashboard — Real-Time Attack Stream
+![Frontend Dashboard](img/frontend%20dashbord.png)
 
 ---
 

@@ -1,2 +1,2 @@
 # Auto-generated Honeypot Blocklist
-iptables -A INPUT -s [::1]:52638 -j DROP
+iptables -A INPUT -s [::1]:34548 -j DROP
