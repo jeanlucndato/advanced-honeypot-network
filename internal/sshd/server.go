@@ -10,7 +10,7 @@ import (
 	"strings"
 	"golang.org/x/crypto/ssh"
 	"advance-honeypot-network/internal/event"
-	"advance-honeypot-network/pkg/types"
+	"advance-honeypot-network/internal/types"
 )
 
 func StartSSHServer(port string) {

