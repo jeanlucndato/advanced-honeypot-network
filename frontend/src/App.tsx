@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Terminal, Shield, Activity, ShieldAlert, Globe, ServerCrash } from 'lucide-react';
+import { Terminal, Shield, Activity, ShieldAlert, Globe } from 'lucide-react';
 import './App.css';
 
 interface Event {
@@ -12,6 +12,7 @@ interface Event {
   username?: string;
   country_code: string;
   country_name: string;
+  mitre_techniques?: string[];
 }
 
 function App() {
@@ -19,30 +20,32 @@ function App() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8000/ws/events');
-
-    ws.onopen = () => {
-      console.log('Connected to event stream');
-      setConnected(true);
+    let socket: WebSocket | undefined;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+    let stopped = false;
+    let retryDelay = 1000;
+    const connect = () => {
+      if (stopped) return;
+      const address = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:8000/ws/events`;
+      socket = new WebSocket(address);
+      socket.onopen = () => { retryDelay = 1000; setConnected(true); };
+      socket.onmessage = (msg) => {
+        try {
+          const e: Event = JSON.parse(msg.data);
+          setEvents((prev) => [e, ...prev].slice(0, 100));
+        } catch (err) { console.error('Failed to parse event', err); }
+      };
+      socket.onclose = () => {
+        setConnected(false);
+        if (!stopped) {
+          reconnectTimer = setTimeout(connect, retryDelay);
+          retryDelay = Math.min(retryDelay * 2, 30000);
+        }
+      };
+      socket.onerror = () => socket?.close();
     };
-
-    ws.onmessage = (msg) => {
-      try {
-        const e: Event = JSON.parse(msg.data);
-        setEvents((prev) => [e, ...prev].slice(0, 50)); // Keep last 50 events
-      } catch (err) {
-        console.error('Failed to parse event', err);
-      }
-    };
-
-    ws.onclose = () => {
-      setConnected(false);
-      console.log('Disconnected from event stream');
-    };
-
-    return () => {
-      ws.close();
-    };
+    connect();
+    return () => { stopped = true; if (reconnectTimer) clearTimeout(reconnectTimer); socket?.close(); };
   }, []);
 
   const getEventTypeClass = (type: string) => {
@@ -87,12 +90,13 @@ function App() {
                   <th>Attack Vector</th>
                   <th>Identity</th>
                   <th>Payload / Command</th>
+                  <th>MITRE ATT&amp;CK</th>
                 </tr>
               </thead>
               <tbody>
                 {events.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="empty-state">
+                    <td colSpan={7} className="empty-state">
                       <ShieldAlert className="empty-state-icon" />
                       <div>No malicious activity detected. Monitoring all vectors.</div>
                     </td>
@@ -130,6 +134,7 @@ function App() {
                           </span>
                         )}
                       </td>
+                      <td>{e.mitre_techniques?.length ? e.mitre_techniques.join(', ') : '—'}</td>
                     </tr>
                   ))
                 )}
