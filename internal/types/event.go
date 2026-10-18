@@ -7,9 +7,11 @@ type Event struct {
 	ID              string    `json:"id"`
 	Timestamp       time.Time `json:"timestamp"`
 	AttackerIP      string    `json:"attacker_ip"`
-	Service         string    `json:"service"`      // "ssh", "http", "mysql", etc.
-	EventType       string    `json:"event_type"`   // "auth_attempt", "command_exec", "file_upload"
-	Payload         string    `json:"payload"`      // La commande tapée ou le mot de passe testé
+	AttackerPort    string    `json:"attacker_port,omitempty"`
+	SensorID        string    `json:"sensor_id"`
+	Service         string    `json:"service"`    // "ssh", "http", "mysql", etc.
+	EventType       string    `json:"event_type"` // "auth_attempt", "command_exec", "file_upload"
+	Payload         string    `json:"payload"`    // La commande tapée ou le mot de passe testé
 	Username        string    `json:"username,omitempty"`
 	CountryCode     string    `json:"country_code"` // Rempli plus tard par le moteur GeoIP
 	CountryName     string    `json:"country_name"`
