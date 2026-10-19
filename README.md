@@ -1,117 +1,163 @@
-# Hive — Honeypot Network
+# Hive — Interactive Honeypot Network
 
-Hive is a Go-based multi-service honeypot with a React operations dashboard. It accepts connections on SSH, HTTP, MySQL, and Redis decoys, normalizes observed activity into events, adds heuristic MITRE ATT&CK tags, writes IP intelligence suggestions, and streams events to the browser.
+**Hive is a small, event-driven security lab for observing how automated scanners and hands-on intruders interact with decoy services.** Four Go sensors (SSH, HTTP, MySQL, and Redis) feed a live React dashboard. A visit to the `inversehacker` decoy site, an SSH login attempt, or a command entered into the simulated shell becomes a structured event that can be inspected in real time.
 
-> **Deployment boundary:** Hive is an interactive sensor, not a production SSH, web, MySQL, or Redis server. Run it on a dedicated, isolated host or VM you control. Do not give it access to production credentials, internal services, container sockets, or sensitive file shares. The fake SSH shell never executes submitted commands. Generated firewall rules are suggestions and are never applied automatically.
+The project brings together network protocol handling, concurrent event delivery, input sanitization, persistent local telemetry, WebSocket streaming, and a responsive operator interface.
 
-## Requirements
+> **Run Hive as a sensor, not as infrastructure.** Its SSH, web, MySQL, and Redis services are decoys, not production servers. Keep the dashboard API private. For any network exposure, use a dedicated, isolated host that contains no production credentials or sensitive data. The fake SSH shell never runs commands on the host, and suggested firewall rules are never applied automatically.
 
-- Go 1.26.4 or later
-- Node.js 20.19+ or 22.12+, with npm (Vite 8 requirement)
+## See it in action
 
-## Start Hive locally
+Run Hive locally, then open the dashboard and try the short walkthrough:
 
-Open a terminal at the repository root and start the backend:
+1. Visit **[http://127.0.0.1:5173](http://127.0.0.1:5173)** and select **Decoy website** in the sidebar.
+2. Click an `inversehacker` navigation link. Return to **Event stream** to see an HTTP **link click** event with the destination.
+3. In a second terminal, connect to the SSH decoy and try a few commands:
+
+   ```sh
+   ssh -p 2222 root@127.0.0.1
+   ```
+
+   Accept the host key on first connection, enter any password, then try `whoami`, `ps`, or `cd /var/www/html`. Those commands are recorded and answered by the simulated shell; they are never executed on your computer.
+
+You can generate a web scan without any additional tools:
 
 ```sh
-go run ./cmd/hive
+curl http://127.0.0.1:8080/wp-login.php
 ```
 
-The SSH, HTTP, MySQL, and Redis listeners bind to all interfaces by default. The API binds to `127.0.0.1:8000` by default. For a local demo, this keeps the dashboard API off the network while the decoy services are reachable on the host. Before running on an internet-facing system, configure host-level firewall rules and deploy on an isolated sensor host.
-
-Open a second terminal and launch the dashboard:
+For more sample activity, if you have these client tools installed:
 
 ```sh
-cd frontend
-npm ci
-npm run dev
-```
-
-Open the URL printed by Vite, normally `http://localhost:5173`. The dashboard loads recent events from the local journal through the API and then receives new events over WebSocket.
-
-### Generate safe sample activity
-
-In another terminal, use local requests to trigger example events:
-
-```sh
-curl -i http://127.0.0.1:8080/wp-login.php
 redis-cli -h 127.0.0.1 -p 6379 PING
 mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u demo
-ssh -p 2222 root@127.0.0.1
 ```
 
-Any password entered in the SSH or MySQL decoy is discarded. The SSH shell records commands and returns a small set of canned responses; it does not execute shell commands on the host. For a quick browser/API check, use `curl http://127.0.0.1:8000/api/health` and `curl http://127.0.0.1:8000/api/events?limit=20`.
+Hive’s dashboard is at **127.0.0.1:5173**, its inversehacker decoy site is at **127.0.0.1:8080**, and the local health endpoint is **127.0.0.1:8000/api/health**.
+
+## Quick start
+
+### Requirements
+
+- Go 1.26.4 or later
+- Node.js 20.19+ or 22.12+, with npm
+
+### Launch
+
+From the repository root:
+
+```sh
+./run-local.sh
+```
+
+The launcher installs dashboard dependencies if needed and starts the backend and Vite development server. Keep the terminal open while using Hive. Press **Ctrl+C** to stop. By default, all five listeners bind to `127.0.0.1`, keeping the decoys and dashboard on this computer.
+
+If startup reports **address already in use**, another process is using one of Hive’s ports. Close that process or configure a different port using the environment variables below.
+
+## Why this project is interesting
+
+- **Protocol-specific sensors:** SSH, HTTP, MySQL, and Redis each produce normalized events from different wire protocols and request shapes.
+- **An event-driven pipeline:** a shared typed event bus enriches events, journals them, and streams them to subscribers without letting a slow dashboard block a sensor handler.
+- **A safe interactive SSH decoy:** commands receive believable canned Linux responses, with a small pretend filesystem and a changing prompt. Submitted commands are captured, but no shell process is started and no host files are read.
+- **Web interaction telemetry:** the inversehacker landing page is served by the HTTP decoy. Same-site link clicks become distinct `link_click` events visible in the dashboard.
+- **Real-time operations UI:** the React dashboard combines recent history with a reconnecting WebSocket stream, event search, service filters, and delivery/journal health counters. The decoy website can be previewed inside Hive.
+- **Threat-intelligence outputs:** observed source IPs can produce STIX 2.1 indicators and suggested `iptables`/`ip6tables` commands for review.
+- **Deliberate safety boundaries:** passwords are not recorded by the SSH or MySQL decoys, common secret patterns are redacted, listener input is bounded, and firewall suggestions are not executed.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Sensors[Go decoy services]
+    SSH[SSH shell]
+    HTTP[HTTP site]
+    MYSQL[MySQL handshake]
+    REDIS[Redis RESP]
+  end
+
+  Sensors --> BUS[Typed event bus]
+  BUS --> ENRICH[Heuristic ATT&CK enrichment]
+  ENRICH --> JOURNAL[Rotating JSONL journal]
+  ENRICH --> API[HTTP API + WebSocket]
+  API --> UI[React Hive dashboard]
+  ENRICH --> INTEL[Threat-intel subscriber]
+  INTEL --> OUTPUTS[STIX + firewall suggestions]
+```
+
+### Event flow
+
+1. A sensor observes an interaction and publishes a typed event with source address, service, event type, timestamp, and sanitized payload.
+2. The event bus assigns an ID and sensor ID, applies heuristic MITRE ATT&CK tags, retains a recent in-memory window, appends to the JSONL journal, and fans out to bounded subscriber queues.
+3. The dashboard loads recent events through the API, receives new events over WebSocket, and reconnects with backoff if the connection drops.
+4. The threat-intelligence subscriber deduplicates valid IP addresses and writes suggested firewall rules and STIX indicators for an operator to inspect.
+
+## Components and boundaries
+
+| Component | Captures | Important limit |
+|---|---|---|
+| SSH decoy | Login usernames and commands from shell or SSH `exec` requests | Fake shell; no commands run. Passwords are discarded. A persistent Ed25519 host key is stored at `data/ssh_host_ed25519`. |
+| HTTP decoy | Method, path, user agent, bounded request body, and inversehacker link clicks | Best-effort text redaction is not a guarantee that all personal or secret data is removed. |
+| MySQL decoy | Login username from a bounded handshake packet | Returns access denied; does not store the password response or implement SQL sessions. |
+| Redis decoy | Commands from inline and RESP requests | Minimal replies for common commands; not a Redis-compatible database. `AUTH` values and common secret assignments are redacted. |
+| Dashboard/API | Recent events, WebSocket stream, and basic sensor delivery metrics | API has no authentication. Dashboard loads up to 100 historical events and keeps up to 500 in browser memory. |
+| Threat intelligence | Valid source IPs and service names | ATT&CK tags are heuristics; IP indicators are investigative leads, not proof of malicious activity. |
+
+Captured telemetry may still contain sensitive attacker-supplied data. Review retention, access, and legal requirements before collecting data beyond a local lab.
 
 ## Configuration
 
-Set environment variables before starting `go run ./cmd/hive`:
+Set environment variables before launching the backend. The local defaults keep every listener on loopback.
 
 | Variable | Default | Purpose |
-|---|---:|---|
+|---|---|---|
 | `HIVE_SSH_PORT` | `2222` | SSH decoy port |
 | `HIVE_HTTP_PORT` | `8080` | HTTP decoy port |
 | `HIVE_MYSQL_PORT` | `3306` | MySQL decoy port |
 | `HIVE_REDIS_PORT` | `6379` | Redis decoy port |
-| `HIVE_API_PORT` | `8000` | API port used when `HIVE_API_ADDR` is unset |
-| `HIVE_SENSOR_ID` | `hive-01` | Sensor identifier attached to events and health responses |
-| `HIVE_EVENT_LOG` | `data/events.jsonl` | Append-only event journal; retains the active file and one rotated backup (64 MiB each) |
-| `HIVE_SSH_ADDR` | `0.0.0.0:<port>` | SSH bind address |
-| `HIVE_HTTP_ADDR` | `:<port>` | HTTP bind address |
-| `HIVE_MYSQL_ADDR` | `:<port>` | MySQL bind address |
-| `HIVE_REDIS_ADDR` | `:<port>` | Redis bind address |
-| `HIVE_API_ADDR` | `127.0.0.1:<port>` | API bind address; set to a private interface address to allow a remote dashboard |
-| `HIVE_ALLOWED_ORIGINS` | localhost Vite origins | Comma-separated browser origins allowed by HTTP CORS and WebSocket checks |
-| `VITE_WS_URL` | `ws(s)://<dashboard-host>:8000/ws/events` | Optional dashboard WebSocket URL, set when starting Vite |
+| `HIVE_API_PORT` | `8000` | API port when `HIVE_API_ADDR` is unset |
+| `HIVE_SENSOR_ID` | `hive-01` | Sensor identifier attached to events |
+| `HIVE_EVENT_LOG` | `data/events.jsonl` | Append-only JSONL journal; active file plus one 64 MiB backup |
+| `HIVE_SSH_ADDR` | `127.0.0.1:<port>` | SSH bind address |
+| `HIVE_HTTP_ADDR` | `127.0.0.1:<port>` | HTTP bind address |
+| `HIVE_MYSQL_ADDR` | `127.0.0.1:<port>` | MySQL bind address |
+| `HIVE_REDIS_ADDR` | `127.0.0.1:<port>` | Redis bind address |
+| `HIVE_API_ADDR` | `127.0.0.1:<port>` | API bind address |
+| `HIVE_ALLOWED_ORIGINS` | Local Vite origins | Comma-separated browser origins allowed by CORS and WebSocket checks |
+| `VITE_WS_URL` | Derived from dashboard host | Optional WebSocket URL for a remote dashboard |
+| `VITE_HIVE_SITE_URL` | `http(s)://<dashboard-host>:8080/` | Optional URL used by the dashboard’s decoy-site preview |
 
-Example: bind decoys to all interfaces while keeping the API private on a LAN address:
-
-```sh
-HIVE_API_ADDR=192.168.1.20:8000 HIVE_ALLOWED_ORIGINS=http://192.168.1.20:5173 go run ./cmd/hive
-```
-
-For a remote dashboard, allow only its exact origin and protect the API behind a trusted reverse proxy or private network. The API does not implement user authentication; do not expose it directly to an untrusted network.
-
-## How the system works
-
-1. `cmd/hive` initializes one typed event bus, installs the MITRE enrichment hook, and starts the four honeypot listeners, the API, and the threat-intelligence subscriber.
-2. Each decoy records an interaction as an event. Common fields include a UTC timestamp, sensor ID, source IP and port, service, event type, and observed payload. Authentication passwords are not stored.
-3. The event bus assigns IDs, applies heuristic ATT&CK tags, appends events to a local JSONL journal, keeps the newest 1,000 events in process memory, and fans out to subscribers using bounded queues. On restart, the dashboard history window reloads from the journal. Slow subscribers can miss live events; the API reports total queue drops and journal errors in `/api/metrics`.
-4. The dashboard fetches up to 100 recent events, listens for new WebSocket events, reconnects with backoff, and retains up to 500 events in browser memory. Search and service filters operate on the events currently loaded in the browser.
-5. The threat-intelligence processor deduplicates valid source IPs and writes suggested `iptables`/`ip6tables` DROP commands plus STIX 2.1 indicators to files in the backend working directory. It never executes those rules.
-
-### Decoy behavior and limits
-
-- **SSH:** accepts password attempts into a fake Ubuntu-style shell, records usernames and submitted commands, and supports a few canned command responses. SSH `exec` requests are recorded but rejected. Passwords are discarded, and common password/token command-line flags are redacted from captured commands. The SSH host key is generated at startup, so its fingerprint changes after a restart.
-- **HTTP:** records method, path, user agent, and up to 64 KiB of a non-GET request body. Common password, token, secret, authorization, and API-key fields are redacted. This is best-effort text redaction, not a guarantee that all secrets or personal data are removed. Every request receives a generic HTML decoy page.
-- **MySQL:** sends a minimal MySQL handshake, parses a bounded login packet to capture the attempted username, then returns access denied. It does not store the password response and does not implement SQL sessions.
-- **Redis:** parses simple inline commands and RESP arrays of bulk strings with bounded element and payload sizes. It returns plausible minimal replies for common commands such as `PING`, `INFO`, and `CONFIG GET`, and records commands. Values supplied to `AUTH`, `CONFIG SET requirepass`, and common secret assignments are redacted. It is not a Redis-compatible database.
-
-MITRE ATT&CK tags are keyword and event-type heuristics. Country fields and GeoIP lookup are not implemented. Credential redaction is best-effort; captured data should still be treated as sensitive. These tags and source-IP indicators are investigative hints, not proof that an IP is malicious.
+To deliberately expose a decoy on a sensor host, set only the needed `HIVE_*_ADDR` to a specific interface address or `0.0.0.0:<port>`, then configure the host firewall. Do not expose the unauthenticated dashboard API directly to an untrusted network. For a remote dashboard, keep access on a trusted private network and protect it with an authenticated proxy.
 
 ## API
 
-- `GET /api/health` — process health response.
-- `GET /api/events?limit=100` — newest in-memory events, newest first; maximum 500.
-- `GET /api/metrics` — current subscriber count and cumulative dropped event count.
-- `GET /ws/events` — WebSocket stream of new events.
+| Endpoint | Description |
+|---|---|
+| `GET /api/health` | Process health and sensor ID |
+| `GET /api/events?limit=100` | Recent in-memory events, newest first; maximum 500 |
+| `GET /api/metrics` | Subscriber count, dropped deliveries, and journal errors |
+| `GET /ws/events` | Live event stream |
 
-The event journal is local JSONL, not a database: it has no indexed search and rotates at 64 MiB, keeping the active file and one previous file. The dashboard only loads the latest 100 events at startup; it does not offer pagination or historical search. The API currently has no authentication.
+The journal is local JSONL rather than an indexed database. It rotates at 64 MiB and keeps one backup. The dashboard currently has no pagination or historical search. A full browser can miss events if its subscriber queue fills; dropped deliveries and journal write errors are exposed through `/api/metrics`.
 
-## Output files
+## Generated data
 
-- `iptables-blocklist.txt` contains suggested firewall commands. Review and adapt every entry before use; never pipe this file directly to a shell.
-- `threat-intel.stix.json` contains generated STIX 2.1 indicator objects. Back up existing files before changing or migrating them.
+- `data/events.jsonl` and its rotated backup contain recent event history.
+- `data/ssh_host_ed25519` stores the SSH decoy’s private host key with restricted file permissions. Keep it with the sensor’s data when moving the same sensor; deleting it causes clients to see a new SSH host fingerprint.
+- `iptables-blocklist.txt` contains suggested firewall commands. Inspect and adapt entries manually; never pipe this file directly to a shell.
+- `threat-intel.stix.json` contains generated STIX 2.1 indicator objects.
 
-The event journal and intelligence files are written relative to the backend's current working directory unless `HIVE_EVENT_LOG` is an absolute path. Run the backend from a dedicated writable data directory if you want to keep generated files separate from the source checkout.
+The journal and intelligence files are relative to the backend’s working directory unless `HIVE_EVENT_LOG` is an absolute path. The local launcher runs the backend from the repository root.
 
-## Development commands
+## Development
+
+Backend:
 
 ```sh
 go build ./cmd/hive
 go test ./...
 ```
 
-For the dashboard:
+Frontend:
 
 ```sh
 cd frontend
@@ -119,6 +165,10 @@ npm run build
 npm run lint
 ```
 
-## Production-readiness checklist
+## Scope and next steps
 
-Before operating beyond a lab, use an isolated VM or host, restrict inbound and outbound network access, protect the management/dashboard path with authentication at a trusted proxy, configure log retention and backups, monitor disk and resource use, and review privacy and legal requirements for the data you collect. Hive currently has no durable event database, authenticated API, GeoIP service, or complete protocol implementations; it is a development-stage honeypot, not a turnkey production SOC platform.
+Hive is a development-stage project and a practical security engineering lab, not a turnkey production SOC platform. It does not currently include an authenticated API, a durable indexed event database, GeoIP lookup, complete protocol implementations, or automatic firewall management. Strong next steps include protocol-level integration tests, containerized deployment profiles, historical event search, and authenticated multi-sensor administration.
+
+## License
+
+Hive is released under the [MIT License](LICENSE).

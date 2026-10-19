@@ -63,12 +63,15 @@
   color:#aab5c7;
   text-align:left;
   font:inherit;
-  font-size:13px
+  font-size:13px;
+  cursor:pointer
 }
 .nav-item.active{
   background:#172331;
   color:#58dec4
 }
+.nav-live-dot,.preview-status-dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#41d8a8;box-shadow:0 0 9px #41d8a855}
+.nav-live-dot{margin-left:auto}
 .sidebar-spacer{
   flex:1
 }
@@ -363,6 +366,7 @@
   background:#3b2028;
   color:#ff8794
 }
+.event-pill.interaction{background:#153138;color:#65dfd1}
 .identity-cell{
   color:#a6b2c4
 }
@@ -441,6 +445,18 @@
   flex:0 0 auto;
   color:#d6a04d
 }
+.website-preview-card{overflow:hidden;border:1px solid #263349;border-radius:11px;background:#0d1420;box-shadow:0 18px 50px #0002}
+.preview-toolbar{min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:9px 13px;border-bottom:1px solid #263349;background:#111a28}
+.preview-address{min-width:0;display:flex;align-items:center;gap:9px;color:#bfcbda;font-family:var(--mono);font-size:11px}
+.preview-address>span:nth-child(2){overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-address small{flex:0 0 auto;border:1px solid #364758;border-radius:4px;padding:3px 5px;color:#8293a8;font:700 8px/1 var(--sans);letter-spacing:.07em}
+.preview-actions{display:flex;align-items:center;gap:7px}
+.preview-button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:32px;padding:6px 10px;border:1px solid #334155;border-radius:6px;background:#172233;color:#c6d2e1;font:600 10px var(--sans);cursor:pointer;white-space:nowrap}
+.preview-button:hover{border-color:#4f6c78;background:#1b2b3b;color:#fff}
+.preview-open{text-decoration:none}
+.website-preview-frame{display:block;width:100%;height:min(79vh,900px);min-height:580px;border:0;background:#080d19}
+.preview-caption{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 14px;border-top:1px solid #263349;color:#8492a7;font-size:10px}
+.preview-caption>span{display:flex;align-items:center;gap:8px}
 
 @media(max-width:1100px){
   .main-panel{
@@ -466,7 +482,9 @@
   border-right:0;
   border-bottom:1px solid #1d2637;
   flex-direction:row;
-  align-items:center
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px
 }
 .brand{
   padding:0
@@ -478,6 +496,12 @@
 .sidebar-label,.nav-item,.sidebar-spacer,.sidebar-footer{
   display:none
 }
+.nav-item{display:flex;gap:7px;padding:8px 9px;font-size:11px;white-space:nowrap}
+.nav-item svg{width:14px;height:14px}
+.nav-live-dot{width:6px;height:6px}
+.website-preview-frame{height:76vh;min-height:520px}
+.preview-toolbar{padding:8px}
+.preview-caption{align-items:flex-start;flex-direction:column;gap:6px}
 .sensor-card{
   margin-left:auto;
   padding:7px 9px

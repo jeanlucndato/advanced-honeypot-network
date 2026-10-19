@@ -16,7 +16,7 @@ import (
 func StartServer(port string) {
 	addr := os.Getenv("HIVE_MYSQL_ADDR")
 	if addr == "" {
-		addr = ":" + port
+		addr = "127.0.0.1:" + port
 	}
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {

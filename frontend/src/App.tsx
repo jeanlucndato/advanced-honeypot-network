@@ -16,6 +16,8 @@ function App() {
   const [query, setQuery] = useState('');
   const [dropped, setDropped] = useState(0);
   const [journalErrors, setJournalErrors] = useState(0);
+  const [activeView, setActiveView] = useState<'events' | 'website'>('events');
+  const [sitePreviewKey, setSitePreviewKey] = useState(0);
 
   useEffect(() => {
     let socket: WebSocket | undefined;
@@ -73,13 +75,15 @@ function App() {
   const attacks = events.filter((item) => item.event_type.includes('exploit') || item.event_type.includes('auth_attempt')).length;
   const uniqueSources = new Set(events.map((item) => item.attacker_ip)).size;
   const serviceCount = (service: string) => service === 'all' ? events.length : events.filter((item) => item.service.toLowerCase() === service).length;
+  const siteUrl = import.meta.env.VITE_HIVE_SITE_URL ?? `${location.protocol}//${location.hostname}:8080/`;
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand"><div className="brand-mark"><Shield size={20} /></div><div><strong>HIVE</strong><span>SENSOR CONSOLE</span></div></div>
         <div className="sidebar-label">MONITORING</div>
-        <button className="nav-item active"><Activity size={17} />Event stream</button>
+        <button className={`nav-item ${activeView === 'events' ? 'active' : ''}`} aria-current={activeView === 'events' ? 'page' : undefined} onClick={() => setActiveView('events')}><Activity size={17} />Event stream</button>
+        <button className={`nav-item ${activeView === 'website' ? 'active' : ''}`} aria-current={activeView === 'website' ? 'page' : undefined} onClick={() => setActiveView('website')}><Globe2 size={17} />Decoy website<span className="nav-live-dot" /></button>
         <div className="sidebar-spacer" />
         <div className="sensor-card"><span className="sensor-dot" /><div><strong>hive-01</strong><small>LOCAL SENSOR</small></div><CircleDot size={14} /></div>
         <div className="sidebar-footer">HIVE · DEVELOPMENT BUILD</div>
@@ -87,10 +91,21 @@ function App() {
 
       <main className="main-panel">
         <header className="topbar">
-          <div className="heading"><div className="eyebrow">SECURITY OBSERVABILITY / SENSOR 01</div><h1>Threat activity</h1><p>Live telemetry captured by your deception services.</p></div>
+          <div className="heading"><div className="eyebrow">SECURITY OBSERVABILITY / SENSOR 01</div><h1>{activeView === 'events' ? 'Threat activity' : 'Decoy website'}</h1><p>{activeView === 'events' ? 'Live telemetry captured by your deception services.' : 'Preview the inversehacker site served by your HTTP honeypot.'}</p></div>
           <div className={`connection ${connected ? 'online' : 'offline'}`}>{connected ? <Wifi size={15} /> : <WifiOff size={15} />}{connected ? 'STREAM CONNECTED' : 'RECONNECTING'}</div>
         </header>
 
+        {activeView === 'website' ? <section className="website-preview-card" aria-label="Inversehacker decoy website preview">
+          <div className="preview-toolbar">
+            <div className="preview-address"><span className="preview-status-dot" /><span>{siteUrl}</span><small>HTTP DECOY</small></div>
+            <div className="preview-actions">
+              <button className="preview-button" onClick={() => setSitePreviewKey((key) => key + 1)} title="Reload preview">↻ <span>Reload</span></button>
+              <a className="preview-button preview-open" href={siteUrl} target="_blank" rel="noreferrer">Open separately <span aria-hidden="true">↗</span></a>
+            </div>
+          </div>
+          <iframe key={sitePreviewKey} className="website-preview-frame" src={siteUrl} title="inversehacker decoy website" sandbox="allow-scripts allow-same-origin" />
+          <div className="preview-caption"><span><span className="preview-status-dot" /> Site is served by the HTTP decoy</span><span>Requests appear in Event stream under HTTP</span></div>
+        </section> : <>
         <section className="stats-grid" aria-label="Event summary">
           <article className="stat-card"><div className="stat-label"><Activity size={15} /> EVENTS IN VIEW</div><strong>{events.length}</strong><span>Most recent 500 events</span></article>
           <article className="stat-card"><div className="stat-label"><AlertTriangle size={15} /> AUTH / EXPLOIT SIGNALS</div><strong>{attacks}</strong><span>Heuristic event categories</span></article>
@@ -111,7 +126,7 @@ function App() {
               <td className="time-cell"><span>{new Date(item.timestamp).toLocaleTimeString()}</span><small>{new Date(item.timestamp).toLocaleDateString()}</small></td>
               <td><span className={`service-pill ${item.service}`}>{item.service}</span></td>
               <td className="source-cell">{item.attacker_ip}{item.attacker_port && <small>:{item.attacker_port}</small>}</td>
-              <td><span className={`event-pill ${item.event_type.includes('exploit') ? 'danger' : item.event_type.includes('auth') ? 'warning' : ''}`}>{item.event_type.replaceAll('_', ' ')}</span></td>
+              <td><span className={`event-pill ${item.event_type.includes('exploit') ? 'danger' : item.event_type.includes('auth') ? 'warning' : item.event_type === 'link_click' ? 'interaction' : ''}`}>{item.event_type.replaceAll('_', ' ')}</span></td>
               <td className="identity-cell">{item.username || '—'}</td>
               <td className="payload-cell" title={item.payload}>{item.payload || '—'}</td>
               <td className="mitre-cell">{item.mitre_techniques?.length ? item.mitre_techniques.map((technique) => <code key={technique}>{technique}</code>) : '—'}</td>
@@ -119,6 +134,7 @@ function App() {
           <footer className="stream-footer"><span><span className={`footer-dot ${connected ? 'on' : ''}`} />{connected ? 'Receiving live events' : 'Trying to reconnect'}</span><span><ArrowDownToLine size={14} /> Recent window from local journal · no indexed search</span></footer>
         </section>
         <div className="safety-note"><Shield size={15} /><span>Honeypot telemetry can contain sensitive, attacker-supplied data. Restrict dashboard access and configure retention before external deployment.</span></div>
+        </>}
       </main>
     </div>
   );
