@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Hive – Advanced Honeypot Network | Jeanluck Cyber Insights</title>
+    <meta name="description" content="Hive is an interactive honeypot network that turns activity against SSH, HTTP, MySQL, and Redis decoys into searchable, live telemetry." />
+    <meta name="keywords" content="Honeypot, Cyber Deception, Go, React, TypeScript, WebSocket, Threat Intelligence, SSH, HTTP, MySQL, Redis, Cybersecurity" />
+
+    <!-- Favicons -->
+    <link href="assets/img/favicon.png" rel="icon" />
+    <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon" />
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Mukta:wght@200;300;400;500;600;700;800&family=Abel:wght@400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+    <!-- Vendor CSS Files -->
+    <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="assets/vendor/aos/aos.css" rel="stylesheet" />
+    <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet" />
+    <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet" />
+
+    <!-- Main CSS File -->
+    <link href="assets/css/main.css" rel="stylesheet" />
+
+    <style>
+      /* ============================================================
+         HIVE PROJECT — CUSTOM STYLES
+         Palette: Amber #f59e0b | Dark Navy #0a0f1e | Teal #06b6d4
+      ============================================================ */
+      :root {
+        --hive-amber:   #f59e0b;
+        --hive-amber-d: #d97706;
+        --hive-teal:    #06b6d4;
+        --hive-green:   #10b981;
+        --hive-red:     #ef4444;
+        --hive-navy:    #0a0f1e;
+        --hive-navy-2:  #0d1525;
+        --hive-navy-3:  #111827;
+        --hive-border:  rgba(245, 158, 11, 0.25);
+        --hive-card-bg: rgba(13, 21, 37, 0.9);
+        --mono:         'JetBrains Mono', monospace;
+      }
+
+      /* ── Hero Banner ─────────────────────────────────────────── */
+      .hive-hero-banner {
+        position: relative;
+        min-height: 420px;
+        background: linear-gradient(135deg, var(--hive-navy) 0%, #0c1a3a 50%, #101218 100%);
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        border-bottom: 1px solid var(--hive-border);
+      }
+      .hive-hero-banner::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: url('assets/img/hive_hero.png');
+        background-size: cover;
+        background-position: center;
+        opacity: 0.18;
+      }
+      .hive-hero-banner .hex-grid {
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(circle at 20% 50%, rgba(245,158,11,0.07) 0%, transparent 60%),
+          radial-gradient(circle at 80% 30%, rgba(6,182,212,0.06) 0%, transparent 50%);
+      }
+      .hive-hero-content {
+        position: relative;
+        z-index: 2;
+        padding: 60px 0 50px;
+      }
+      .hive-featured-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(245,158,11,0.15);
+        border: 1px solid rgba(245,158,11,0.4);
+        border-radius: 50px;
+        padding: 6px 18px;
+        font-family: var(--mono);
+        font-size: 0.72rem;
+        letter-spacing: 0.12em;
+        color: var(--hive-amber);
+        text-transform: uppercase;
+        margin-bottom: 20px;
+      }
+      .hive-featured-badge .dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--hive-amber);
+        animation: pulse-dot 1.5s ease-in-out infinite;
+      }
+      @keyframes pulse-dot {
+        0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.6); }
+        50%       { box-shadow: 0 0 0 6px rgba(245,158,11,0); }
+      }
+      .hive-hero-title {
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.15;
+        margin-bottom: 14px;
+      }
+      .hive-hero-title .accent { color: var(--hive-amber); }
+      .hive-hero-subtitle {
+        font-size: 1.05rem;
+        color: rgba(255,255,255,0.7);
+        max-width: 680px;
+        line-height: 1.7;
+        margin-bottom: 28px;
+      }
+      .hive-tags-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 30px;
+      }
+      .hive-tag {
+        padding: 5px 14px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-family: var(--mono);
+        font-weight: 600;
+        letter-spacing: 0.04em;
+      }
+      .tag-go    { background: rgba(0,173,216,0.15); border: 1px solid rgba(0,173,216,0.4); color: #00aed8; }
+      .tag-react { background: rgba(97,218,251,0.1);  border: 1px solid rgba(97,218,251,0.35); color: #61dafb; }
+      .tag-mitre { background: rgba(239,68,68,0.1);   border: 1px solid rgba(239,68,68,0.35); color: #f87171; }
+      .tag-stix  { background: rgba(16,185,129,0.1);  border: 1px solid rgba(16,185,129,0.35); color: #34d399; }
+      .tag-ws    { background: rgba(168,85,247,0.1);  border: 1px solid rgba(168,85,247,0.35); color: #c084fc; }
+      .tag-ssh   { background: rgba(245,158,11,0.1);  border: 1px solid rgba(245,158,11,0.35); color: var(--hive-amber); }
+      .tag-cyber { background: rgba(6,182,212,0.1);   border: 1px solid rgba(6,182,212,0.35); color: var(--hive-teal); }
+
+      .hive-meta-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        align-items: center;
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.55);
+      }
+      .hive-meta-row i { color: var(--hive-amber); margin-right: 6px; }
+
+      /* ── Metrics Cards ──────────────────────────────────────── */
+      .hive-metrics {
+        background: var(--hive-navy-2);
+        border-top: 1px solid var(--hive-border);
+        border-bottom: 1px solid var(--hive-border);
+        padding: 48px 0;
+      }
+      .metric-card {
+        background: var(--hive-card-bg);
+        border: 1px solid var(--hive-border);
+        border-radius: 16px;
+        padding: 28px 24px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+      .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(245,158,11,0.12);
+      }
+      .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        border-radius: 3px 3px 0 0;
+      }
+      .metric-card.amber::before { background: linear-gradient(90deg, var(--hive-amber), var(--hive-amber-d)); }
+      .metric-card.teal::before  { background: linear-gradient(90deg, var(--hive-teal), #0284c7); }
+      .metric-card.green::before { background: linear-gradient(90deg, var(--hive-green), #059669); }
+      .metric-card.red::before   { background: linear-gradient(90deg, var(--hive-red), #b91c1c); }
+      .metric-icon {
+        font-size: 2.2rem;
+        margin-bottom: 14px;
+      }
+      .metric-card.amber .metric-icon { color: var(--hive-amber); }
+      .metric-card.teal  .metric-icon { color: var(--hive-teal);  }
+      .metric-card.green .metric-icon { color: var(--hive-green); }
+      .metric-card.red   .metric-icon { color: var(--hive-red);   }
+      .metric-value {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1;
+        margin-bottom: 8px;
+        font-family: var(--mono);
+      }
+      .metric-label {
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 8px;
+      }
+      .metric-card.amber .metric-label { color: var(--hive-amber); }
+      .metric-card.teal  .metric-label { color: var(--hive-teal);  }
+      .metric-card.green .metric-label { color: var(--hive-green); }
+      .metric-card.red   .metric-label { color: var(--hive-red);   }
+      .metric-desc {
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.5);
+        line-height: 1.5;
+      }
+
+      /* ── Section common ──────────────────────────────────────── */
+      .hive-section {
+        padding: 72px 0;
+      }
+      .hive-section-dark { background: var(--hive-navy); }
+      .hive-section-mid  { background: var(--hive-navy-2); }
+      .hive-section-alt  { background: var(--hive-navy-3); }
+
+      .hive-section-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        color: var(--hive-amber);
+        font-family: var(--mono);
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .hive-section-heading {
+        font-size: clamp(1.5rem, 3vw, 2.2rem);
+        font-weight: 800;
+        color: #fff;
+        margin-bottom: 16px;
+      }
+      .hive-section-heading .accent { color: var(--hive-amber); }
+      .hive-section-lead {
+        color: rgba(255,255,255,0.6);
+        font-size: 1rem;
+        line-height: 1.8;
+        max-width: 700px;
+      }
+
+      /* ── Deep Dive Cards ────────────────────────────────────── */
+      .deepdive-card {
+        background: var(--hive-card-bg);
+        border: 1px solid rgba(255,255,255,0.07);
+        border-radius: 16px;
+        padding: 30px;
+        height: 100%;
+        transition: border-color 0.3s ease, box-shadow 0.3s ease;
+      }
+      .deepdive-card:hover {
+        border-color: rgba(245,158,11,0.3);
+        box-shadow: 0 8px 30px rgba(245,158,11,0.08);
+      }
+      .deepdive-card .card-icon-wrap {
+        width: 52px; height: 52px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 18px;
+      }
+      .icon-amber { background: rgba(245,158,11,0.12); color: var(--hive-amber); }
+      .icon-teal  { background: rgba(6,182,212,0.12);  color: var(--hive-teal);  }
+      .icon-green { background: rgba(16,185,129,0.12); color: var(--hive-green); }
+      .icon-red   { background: rgba(239,68,68,0.12);  color: var(--hive-red);   }
+      .icon-purple{ background: rgba(168,85,247,0.12); color: #c084fc; }
+
+      .deepdive-card h4 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 12px;
+      }
+      .deepdive-card p, .deepdive-card li {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.6);
+        line-height: 1.75;
+      }
+      .deepdive-card ul {
+        padding-left: 18px;
+        margin: 0;
+      }
+      .deepdive-card ul li { margin-bottom: 6px; }
+      .deepdive-card ul li strong { color: rgba(255,255,255,0.85); }
+
+      /* ── Architecture Diagram ───────────────────────────────── */
+      .arch-diagram {
+        background: var(--hive-navy);
+        border: 1px solid var(--hive-border);
+        border-radius: 20px;
+        padding: 40px;
+        position: relative;
+        overflow: hidden;
+      }
+      .arch-diagram::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 50% 0%, rgba(245,158,11,0.06) 0%, transparent 65%);
+      }
+      .arch-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        position: relative;
+        z-index: 1;
+      }
+      .arch-row {
+        display: flex;
+        align-items: stretch;
+        gap: 0;
+      }
+      .arch-node {
+        flex: 1;
+        border-radius: 12px;
+        padding: 16px 20px;
+        text-align: center;
+        position: relative;
+      }
+      .arch-node .node-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+      }
+      .arch-node .node-desc {
+        font-size: 0.72rem;
+        opacity: 0.7;
+        line-height: 1.4;
+      }
+      .node-attackers { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.35); color: #fca5a5; }
+      .node-go        { background: rgba(0,173,216,0.12); border: 1px solid rgba(0,173,216,0.35); color: #67e8f9; }
+      .node-eventbus  { background: rgba(245,158,11,0.12);border: 1px solid rgba(245,158,11,0.35); color: var(--hive-amber); }
+      .node-mitre     { background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.35); color: #f87171; }
+      .node-api       { background: rgba(168,85,247,0.12);border: 1px solid rgba(168,85,247,0.35); color: #c084fc; }
+      .node-react     { background: rgba(97,218,251,0.1); border: 1px solid rgba(97,218,251,0.35); color: #61dafb; }
+
+      .arch-arrow {
+        display: flex;
+        justify-content: center;
+        padding: 8px 0;
+        color: rgba(245,158,11,0.5);
+        font-size: 1.2rem;
+      }
+
+      .arch-row-multi {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 0;
+      }
+
+      /* ── Terminal Walkthrough ───────────────────────────────── */
+      .terminal-window {
+        background: #0d1117;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        font-family: var(--mono);
+      }
+      .terminal-header {
+        background: #161b22;
+        padding: 12px 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+      }
+      .terminal-dot {
+        width: 12px; height: 12px;
+        border-radius: 50%;
+      }
+      .dot-red    { background: #ff5f57; }
+      .dot-yellow { background: #ffbd2e; }
+      .dot-green  { background: #28c840; }
+      .terminal-title {
+        margin-left: 8px;
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.4);
+      }
+      .terminal-body {
+        padding: 20px 24px;
+        font-size: 0.82rem;
+        line-height: 1.9;
+      }
+      .t-prompt { color: #58d68d; }
+      .t-cmd    { color: #fff; }
+      .t-output { color: rgba(255,255,255,0.55); }
+      .t-warn   { color: #f59e0b; }
+      .t-alert  { color: #ef4444; }
+      .t-info   { color: #06b6d4; }
+      .t-success{ color: #10b981; }
+      .t-comment{ color: rgba(255,255,255,0.28); }
+
+      /* ── Walkthrough Steps ──────────────────────────────────── */
+      .walkthrough-step {
+        position: relative;
+        padding-left: 56px;
+        margin-bottom: 40px;
+      }
+      .walkthrough-step:last-child { margin-bottom: 0; }
+      .step-number {
+        position: absolute;
+        left: 0; top: 0;
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: rgba(245,158,11,0.12);
+        border: 2px solid rgba(245,158,11,0.5);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.9rem;
+        font-weight: 800;
+        color: var(--hive-amber);
+        font-family: var(--mono);
+        flex-shrink: 0;
+      }
+      .walkthrough-step::after {
+        content: '';
+        position: absolute;
+        left: 19px; top: 42px;
+        width: 2px;
+        bottom: -40px;
+        background: linear-gradient(180deg, rgba(245,158,11,0.3), transparent);
+      }
+      .walkthrough-step:last-child::after { display: none; }
+      .step-label {
+        font-size: 0.72rem;
+        font-family: var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--hive-amber);
+        margin-bottom: 4px;
+      }
+      .step-title {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 8px;
+      }
+      .step-desc {
+        font-size: 0.88rem;
+        color: rgba(255,255,255,0.55);
+        line-height: 1.7;
+        margin-bottom: 14px;
+      }
+
+      /* ── File Tree ──────────────────────────────────────────── */
+      .file-tree {
+        background: #0d1117;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 24px;
+        font-family: var(--mono);
+        font-size: 0.82rem;
+        line-height: 2;
+      }
+      .ft-root    { color: var(--hive-amber); font-weight: 700; }
+      .ft-dir     { color: #61dafb; }
+      .ft-file    { color: rgba(255,255,255,0.6); }
+      .ft-comment { color: rgba(255,255,255,0.28); font-style: italic; }
+      .ft-indent1 { padding-left: 20px; }
+      .ft-indent2 { padding-left: 40px; }
+
+      /* ── Ethics Disclaimer ──────────────────────────────────── */
+      .ethics-card {
+        background: rgba(239,68,68,0.07);
+        border: 1px solid rgba(239,68,68,0.3);
+        border-radius: 16px;
+        padding: 32px;
+      }
+      .ethics-card h4 { color: #f87171; font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+      .ethics-card p, .ethics-card li {
+        color: rgba(255,255,255,0.6);
+        font-size: 0.9rem;
+        line-height: 1.8;
+      }
+      .ethics-card ul { padding-left: 20px; }
+
+      /* ── Navigation ─────────────────────────────────────────── */
+      .hive-nav {
+        background: var(--hive-navy);
+        border-top: 1px solid var(--hive-border);
+        padding: 32px 0;
+      }
+      .hive-nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+      .nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 0.88rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+      }
+      .nav-btn-outline {
+        border: 1px solid var(--hive-border);
+        color: rgba(255,255,255,0.7);
+      }
+      .nav-btn-outline:hover {
+        border-color: var(--hive-amber);
+        color: var(--hive-amber);
+        background: rgba(245,158,11,0.08);
+      }
+      .nav-btn-primary {
+        background: linear-gradient(135deg, var(--hive-amber), var(--hive-amber-d));
+        color: #000;
+      }
+      .nav-btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(245,158,11,0.3);
+        color: #000;
+      }
+
+      /* ── STIX / CTI Badge ───────────────────────────────────── */
+      .cti-pipeline {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 20px;
+        background: rgba(16,185,129,0.06);
+        border: 1px solid rgba(16,185,129,0.2);
+        border-radius: 12px;
+        margin-top: 20px;
+      }
+      .cti-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.8rem;
+        font-family: var(--mono);
+        color: rgba(255,255,255,0.7);
+      }
+      .cti-step .badge-pill {
+        background: rgba(16,185,129,0.15);
+        border: 1px solid rgba(16,185,129,0.35);
+        color: #34d399;
+        padding: 3px 10px;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .cti-arrow { color: rgba(255,255,255,0.25); font-size: 1rem; }
+
+      /* ── Responsive adjustments ─────────────────────────────── */
+      @media (max-width: 768px) {
+        .arch-row-multi { grid-template-columns: 1fr 1fr; }
+        .hive-hero-title { font-size: 1.8rem; }
+        .arch-diagram { padding: 24px 16px; }
+      }
+      @media (max-width: 480px) {
+        .arch-row-multi { grid-template-columns: 1fr; }
+      }
+    </style>
+  </head>
+
+  <body class="portfolio-details-page" style="background: #0a0f1e; color: #fff;">
+
+    <!-- ═══════════════ HEADER ═══════════════ -->
+    <header id="header" class="header d-flex align-items-center position-relative">
+      <div class="container-fluid position-relative d-flex align-items-center justify-content-between">
+        <a href="index.html" class="logo d-flex align-items-center">
+          <h1 class="sitename">Jeanluck Cyber Insights</h1>
+        </a>
+        <nav id="navmenu" class="navmenu">
+          <ul>
+            <li><a href="index.html#hero" class="active">Home</a></li>
+            <li><a href="index.html#Apropos">About</a></li>
+            <li><a href="index.html#portfolio">Projects &amp; Case Studies</a></li>
+            <li><a href="index.html#contact">Contact</a></li>
+          </ul>
+          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </nav>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="hive-hero-banner">
+        <div class="hex-grid"></div>
+        <div class="container">
+          <div class="hive-hero-content" data-aos="fade-up">
+            <div class="hive-meta-row mb-3" style="font-size:0.8rem;">
+              <a href="index.html" style="color:var(--hive-amber);text-decoration:none;"><i class="bi bi-house-fill"></i> Home</a>
+              <span>/</span><span>Project case study</span><span>/</span><span>Hive</span>
+            </div>
+            <div class="hive-featured-badge"><span class="dot"></span> Security engineering portfolio project</div>
+            <h1 class="hive-hero-title">Hive — <span class="accent">Interactive</span><br>Honeypot Network</h1>
+            <p class="hive-hero-subtitle">Hive turns activity against decoy services into searchable, live telemetry. Four Go sensors observe SSH, HTTP, MySQL, and Redis interactions and stream structured events to a React and TypeScript operator dashboard.</p>
+            <div class="hive-tags-row">
+              <span class="hive-tag tag-go">Go</span><span class="hive-tag tag-react">React</span><span class="hive-tag tag-ws">TypeScript · WebSockets</span><span class="hive-tag tag-cyber">TCP/IP</span><span class="hive-tag tag-stix">JSONL · STIX 2.1</span><span class="hive-tag tag-ssh">Docker Compose</span>
+            </div>
+            <div class="hive-meta-row">
+              <span><i class="bi bi-diagram-3"></i> Four protocol sensors</span>
+              <span><i class="bi bi-broadcast"></i> Live event stream</span>
+              <span><i class="bi bi-shield-check"></i> Local-first, isolated lab</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="hive-metrics">
+        <div class="container">
+          <div class="text-center mb-4" data-aos="fade-up">
+            <p class="hive-section-title">Project at a glance</p>
+            <h2 class="hive-section-heading">From decoy interaction to investigation</h2>
+          </div>
+          <div class="row g-4" data-aos="fade-up" data-aos-delay="100">
+            <div class="col-lg-3 col-md-6"><div class="metric-card amber"><div class="metric-icon"><i class="bi bi-hdd-network"></i></div><div class="metric-value">4</div><div class="metric-label">Protocol sensors</div><div class="metric-desc">SSH, HTTP, MySQL, and Redis decoys each normalize observed activity into events.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card teal"><div class="metric-icon"><i class="bi bi-arrow-left-right"></i></div><div class="metric-value">Live</div><div class="metric-label">Operator feed</div><div class="metric-desc">A WebSocket stream delivers new events alongside searchable journal history.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card green"><div class="metric-icon"><i class="bi bi-journal-text"></i></div><div class="metric-value">JSONL</div><div class="metric-label">Local journal</div><div class="metric-desc">Events are retained in rotating, bounded local files for later search and review.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card red"><div class="metric-icon"><i class="bi bi-shield-lock"></i></div><div class="metric-value">Safe</div><div class="metric-label">Controlled response</div><div class="metric-desc">Firewall suggestions are exported for inspection and are never applied automatically.</div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="hive-section hive-section-dark">
+        <div class="container">
+          <div class="row mb-5" data-aos="fade-up"><div class="col-lg-8">
+            <p class="hive-section-title">Engineering highlights</p>
+            <h2 class="hive-section-heading">A complete <span class="accent">event-to-operator workflow</span></h2>
+            <p class="hive-section-lead">The project demonstrates network protocol handling, concurrent event delivery, input sanitization, journaled storage, API and WebSocket design, containerized deployment, and an operator-focused interface.</p>
+          </div></div>
+          <div class="row g-4">
+            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-amber"><i class="bi bi-hdd-network"></i></div><h4>Protocol-aware sensors</h4><p>Separate Go sensors observe SSH, HTTP, MySQL handshakes, and Redis RESP traffic. Each emits a shared event shape while keeping protocol behavior intentionally limited to a decoy.</p><ul><li>HTTP includes a decoy website and records link clicks and form submissions.</li><li>MySQL captures a bounded login handshake and responds with access denied.</li><li>Redis handles a limited set of inline and RESP commands.</li></ul></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-teal"><i class="bi bi-arrow-repeat"></i></div><h4>Bounded event delivery</h4><p>A typed event bus enriches events with IDs and sensor metadata, applies heuristic ATT&amp;CK tags, writes the journal, keeps a recent in-memory window, and fans out to bounded subscriber queues.</p><ul><li>Slow dashboard clients do not block sensor handlers.</li><li>Dropped deliveries and journal errors are surfaced as operational health signals.</li><li>The dashboard combines journal search with a reconnecting WebSocket feed.</li></ul></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-green"><i class="bi bi-file-earmark-code"></i></div><h4>Useful, reviewable outputs</h4><p>Operators can inspect event details, search retained history, export filtered results to CSV, and review threat-intelligence artifacts.</p><ul><li>Valid source IPs can be represented as STIX 2.1 indicators.</li><li>Suggested firewall commands are written to a file for manual review.</li><li>ATT&amp;CK mappings are investigative heuristics, not proof of malicious intent.</li></ul></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="hive-section hive-section-mid">
+        <div class="container">
+          <div class="text-center mb-5" data-aos="fade-up"><p class="hive-section-title">System design</p><h2 class="hive-section-heading">Architecture &amp; <span class="accent">event flow</span></h2><p class="hive-section-lead mx-auto">Each sensor observes a connection, publishes a sanitized event, and leaves investigation and response decisions with the operator.</p></div>
+          <div class="arch-diagram" data-aos="zoom-in">
+            <div class="arch-flow">
+              <div class="arch-row"><div class="arch-node node-attackers"><div class="node-label">Decoy interactions</div><div class="node-desc">SSH · HTTP · MySQL · Redis</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row-multi"><div class="arch-node node-go"><div class="node-label">SSH sensor</div><div class="node-desc">Fake shell · commands recorded, never executed</div></div><div class="arch-node node-go"><div class="node-label">HTTP sensor</div><div class="node-desc">Requests and decoy-site interactions</div></div><div class="arch-node node-go"><div class="node-label">MySQL sensor</div><div class="node-desc">Bounded handshake · no SQL sessions</div></div><div class="arch-node node-go"><div class="node-label">Redis sensor</div><div class="node-desc">Limited inline and RESP handling</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row"><div class="arch-node node-eventbus"><div class="node-label">Typed event bus</div><div class="node-desc">Enrich · journal · retain recent events · fan out to bounded queues</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row-multi"><div class="arch-node node-mitre"><div class="node-label">Searchable history</div><div class="node-desc">Rotating JSONL journal · retention controls</div></div><div class="arch-node node-mitre"><div class="node-label">Threat-intelligence output</div><div class="node-desc">Heuristic ATT&amp;CK tags · STIX indicators · advisory firewall file</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row"><div class="arch-node node-api"><div class="node-label">HTTP API &amp; WebSocket</div><div class="node-desc">Health · metrics · event search · live stream</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row"><div class="arch-node node-react"><div class="node-label">React + TypeScript operator dashboard</div><div class="node-desc">Live feed · filters · event detail · decoy-site preview · CSV export</div></div></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="hive-section hive-section-dark">
+        <div class="container">
+          <div class="row align-items-center g-5">
+            <div class="col-lg-5"><p class="hive-section-title">See it in action</p><h2 class="hive-section-heading">The dashboard keeps the <span class="accent">operator in context</span></h2><p class="hive-section-lead">The interface brings live sensor activity, retained history, delivery health, and a connected decoy-site preview into one investigation workflow.</p><ul style="color:rgba(255,255,255,.65);line-height:1.9;padding-left:1.2rem"><li>Search events by query and service.</li><li>Open an event for its structured details.</li><li>Review subscriber and journal health signals.</li><li>Export the currently filtered results to CSV.</li></ul></div>
+            <div class="col-lg-7"><figure class="mb-4"><img src="assets/img/hive/Hive dashboard.png" alt="Hive live event dashboard" class="img-fluid rounded-4" loading="lazy"><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">Hive operator dashboard with event telemetry.</figcaption></figure></div>
+          </div>
+          <div class="row g-4 mt-2"><div class="col-md-6"><figure><img src="assets/img/hive/Decoy website landing page.png" alt="Inversehacker decoy website landing page" class="img-fluid rounded-4" loading="lazy"><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">The HTTP sensor serves the responsive decoy website.</figcaption></figure></div><div class="col-md-6"><figure><img src="assets/img/hive/Hive Decoy website.png" alt="Hive dashboard displaying the decoy website preview" class="img-fluid rounded-4" loading="lazy"><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">The embedded preview keeps decoy interactions connected to the live event feed.</figcaption></figure></div></div>
+        </div>
+      </section>
+
+      <section class="hive-section hive-section-mid">
+        <div class="container">
+          <div class="row mb-5"><div class="col-lg-8"><p class="hive-section-title">Try the workflow</p><h2 class="hive-section-heading">Run locally in an <span class="accent">isolated lab</span></h2><p class="hive-section-lead">The source project requires Go 1.26.4+ and Node.js 20.19+ or 22.12+ with npm. From its repository root, launch the local services and keep the terminal open:</p></div></div>
+          <div class="terminal-window"><div class="terminal-header"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">Local launch</span></div><div class="terminal-body"><div><span class="t-prompt">$ </span><span class="t-cmd">./run-local.sh</span></div><div><span class="t-output">Dashboard: 127.0.0.1:5173</span></div><div><span class="t-output">Decoy site: 127.0.0.1:8080</span></div><div><span class="t-output">Health API: 127.0.0.1:8000/api/health</span></div></div></div>
+          <div class="row g-4 mt-3">
+            <div class="col-lg-4"><div class="deepdive-card"><h4>1 · Explore the decoy site</h4><p>Open the dashboard, choose <strong>Decoy website</strong> in the sidebar, then use its navigation and call-to-action links. The page stays loaded while link-click events are sent to Hive.</p></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><h4>2 · Submit the demo form</h4><p>The inquiry form returns a simulated confirmation and records which field names were submitted. Submitted values are discarded by this interaction endpoint.</p></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><h4>3 · Connect to the SSH decoy</h4><p>In a second terminal, connect with <code>ssh -p 2222 root@127.0.0.1</code>, enter any password, and try <code>whoami</code> or <code>ps</code>. The fake shell records commands; it does not run them on the host.</p></div></div>
+          </div>
+          <div class="deepdive-card mt-4"><h4>Generate sample traffic</h4><p class="mb-2">A simple HTTP request is enough to create a sample event:</p><code>curl http://127.0.0.1:8080/wp-login.php</code><p class="mt-3 mb-2">If the client tools are installed, Redis and MySQL also accept sample connections:</p><code>redis-cli -h 127.0.0.1 -p 6379 PING</code><br><code>mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u demo</code></div>
+        </div>
+      </section>
+
+      <section class="hive-section hive-section-dark">
+        <div class="container"><div class="row mb-5"><div class="col-lg-8"><p class="hive-section-title">Boundaries and data handling</p><h2 class="hive-section-heading">Decoys by design, with <span class="accent">clear limits</span></h2><p class="hive-section-lead">Hive is a development-stage security lab, not a production SOC platform. Protocol behavior is intentionally limited; collected data and generated outputs need operator review.</p></div></div>
+          <div class="row g-4">
+            <div class="col-md-6"><div class="deepdive-card"><h4>What each sensor records</h4><ul><li><strong>SSH:</strong> usernames and commands; passwords are discarded. The shell is simulated and never executes host commands.</li><li><strong>HTTP:</strong> method, path, user agent, bounded request body, decoy link clicks, and form field names. Form values are discarded; other request bodies can still contain sensitive input.</li><li><strong>MySQL:</strong> username from a bounded handshake. The sensor does not store the password response or implement SQL sessions.</li><li><strong>Redis:</strong> commands from inline and RESP requests, with AUTH values and common secret assignments redacted.</li></ul></div></div>
+            <div class="col-md-6"><div class="deepdive-card"><h4>Operational limits</h4><ul><li>Local journal is rotating JSONL, not an indexed database; search scans bounded journal files.</li><li>ATT&amp;CK tags are heuristic, and IP indicators are leads for investigation rather than verdicts.</li><li>The browser retains up to 500 events; a full subscriber queue can drop live deliveries.</li><li>Redaction is best effort. Review retention, access, and legal requirements before collecting beyond a local lab.</li><li>Firewall suggestions are advisory text. Inspect and adapt them manually; never execute the file directly.</li></ul></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="hive-section hive-section-mid">
+        <div class="container"><div class="row justify-content-center"><div class="col-lg-10"><div class="ethics-card"><h4>Deployment safety</h4><p>Run Hive as a sensor, not as production infrastructure. Its SSH, web, MySQL, and Redis endpoints are decoys, not production services.</p><ul><li>Default listeners bind to <code>127.0.0.1</code> for local use.</li><li>Keep the dashboard API private. If the API binds beyond loopback, configure the required bearer token and restrict access to a trusted private network.</li><li>For deliberate network exposure, use a dedicated isolated host with no production credentials or sensitive data.</li><li>Suggested firewall rules are never applied automatically.</li></ul><p class="mb-0">Container deployment uses a local Compose profile, loopback-published ports by default, a persistent data volume, dropped Linux capabilities, and a read-only backend filesystem except for its data volume.</p></div></div></div></div>
+      </section>
+    </main>
+
+    <!-- ═══════════════ PROJECT NAVIGATION ═══════════════ -->
+    <div class="hive-nav">
+      <div class="container">
+        <div class="hive-nav-inner">
+          <a href="inversehacker.html" class="nav-btn nav-btn-outline" id="prev-project-btn">
+            <i class="bi bi-arrow-left"></i>
+            <div>
+              <div style="font-size:0.7rem; opacity:0.5; text-transform:uppercase; letter-spacing:0.1em;">Previous project</div>
+              <div style="font-size:0.88rem;">InverseHacker</div>
+            </div>
+          </a>
+          <a href="index.html#portfolio" class="nav-btn nav-btn-outline" id="all-projects-btn">
+            <i class="bi bi-grid-fill"></i>
+            All projects
+          </a>
+          <a href="soc.html" class="nav-btn nav-btn-primary" id="next-project-btn">
+            <div>
+              <div style="font-size:0.7rem; opacity:0.7; text-transform:uppercase; letter-spacing:0.1em;">Next project</div>
+              <div style="font-size:0.88rem;">SOC Analyst Lab</div>
+            </div>
+            <i class="bi bi-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer id="footer" class="footer">
+      <div class="container footer-top">
+        <div class="row gy-4">
+          <div class="col-lg-6 col-md-12 footer-about">
+            <a href="index.html" class="logo d-flex align-items-center">
+              <span class="sitename">Jeanluck Cyber Insights</span>
+            </a>
+            <p>
+              I document hands-on work across cybersecurity, detection, network engineering, and practical IT training.
+            </p>
+            <div class="social-links d-flex mt-4">
+              <a href="https://github.com/Jeanluck"><i class="bi bi-github"></i></a>
+              <a href="https://linkedin.com/in/jeanluckndato"><i class="bi bi-linkedin"></i></a>
+            </div>
+          </div>
+          <div class="col-lg-3 col-md-6 footer-links">
+            <h4>Project areas</h4>
+            <ul>
+              <li><a href="#">Security testing</a></li>
+              <li><a href="#">Cyber Deception</a></li>
+              <li><a href="#">Malware analysis</a></li>
+              <li><a href="#">Network security</a></li>
+              <li><a href="#">Incident response</a></li>
+            </ul>
+          </div>
+          <div class="col-lg-3 col-md-6 footer-contact text-center text-md-start">
+            <h4>Contact</h4>
+            <p>For questions or collaboration, get in touch.</p>
+            <p class="mt-4"><strong>Email:</strong> <span>jeanlucndato@gmail.com</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="container copyright text-center mt-4">
+        <p>© <span>Copyright</span> <strong class="px-1 sitename">Jeanluck Ndato</strong> <span>All rights reserved</span></p>
+        <div class="credits">Designed &amp; maintained by <a href="https://github.com/JeanluckNdato">INVERSEHACKER</a></div>
+      </div>
+    </footer>
+
+    <!-- Scroll Top -->
+    <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center">
+      <i class="bi bi-arrow-up-short"></i>
+    </a>
+
+    <!-- Preloader -->
+    <div id="preloader"></div>
+
+    <!-- Vendor JS Files -->
+    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/vendor/php-email-form/validate.js"></script>
+    <script src="assets/vendor/aos/aos.js"></script>
+    <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+    <script src="assets/vendor/imagesloaded/imagesloaded.pkgd.min.js"></script>
+    <script src="assets/vendor/isotope-layout/isotope.pkgd.min.js"></script>
+    <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+    <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+
+    <!-- Main JS File -->
+    <script src="assets/js/main.js"></script>
+
+    <script>
+      // Animate terminal text on load
+      document.addEventListener('DOMContentLoaded', () => {
+        // AOS init
+        if (typeof AOS !== 'undefined') {
+          AOS.init({ duration: 700, easing: 'ease-in-out', once: true });
+        }
+
+        // Typing cursor blink effect on terminal windows
+        const terminalBodies = document.querySelectorAll('.terminal-body');
+        terminalBodies.forEach(body => {
+          const lastLine = body.lastElementChild;
+          if (lastLine) {
+            const cursor = document.createElement('span');
+            cursor.style.cssText = 'display:inline-block;width:8px;height:1em;background:rgba(245,158,11,0.8);margin-left:2px;vertical-align:text-bottom;animation:blink 1s step-end infinite;';
+            lastLine.appendChild(cursor);
+          }
+        });
+
+        // Add blink keyframe
+        const style = document.createElement('style');
+        style.textContent = '@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }';
+        document.head.appendChild(style);
+      });
+    </script>
+  </body>
+</html>
