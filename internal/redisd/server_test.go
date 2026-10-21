@@ -7,7 +7,7 @@ import (
 )
 
 func TestReadRESPCommand(t *testing.T) {
-	input := "*2\r\n$4\r\nAUTH\r\n$9\r\nsecret123\r\n"
+	input := "$4\r\nAUTH\r\n$9\r\nsecret123\r\n"
 	parts, err := readRESPCommand(bufio.NewReader(strings.NewReader(input)), "*2")
 	if err != nil || len(parts) != 2 || parts[1] != "secret123" {
 		t.Fatalf("parts=%q err=%v", parts, err)

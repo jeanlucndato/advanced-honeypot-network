@@ -18,15 +18,16 @@ function App() {
   const [journalErrors, setJournalErrors] = useState(0);
   const [activeView, setActiveView] = useState<'events' | 'website'>('events');
   const [sitePreviewKey, setSitePreviewKey] = useState(0);
+  const wsAddress = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:8000/ws/events`;
+  const apiAddress = wsAddress.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:').replace(/\/ws\/events(?:\?.*)?$/, '');
+  const apiToken = import.meta.env.VITE_HIVE_API_TOKEN ?? '';
 
   useEffect(() => {
     let socket: WebSocket | undefined;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     let stopped = false;
     let retryDelay = 1000;
-    const wsAddress = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:8000/ws/events`;
-    const apiAddress = wsAddress.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:').replace(/\/ws\/events(?:\?.*)?$/, '');
-    const headers = import.meta.env.VITE_HIVE_API_TOKEN ? { Authorization: `Bearer ${import.meta.env.VITE_HIVE_API_TOKEN}` } : undefined;
+    const headers = apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined;
 
     fetch(`${apiAddress}/api/events?limit=100`, { headers }).then((response) => response.ok ? response.json() : []).then((items: Event[]) => {
       if (!stopped && Array.isArray(items)) setEvents((current) => {
@@ -47,7 +48,7 @@ function App() {
 
     const connect = () => {
       if (stopped) return;
-      socket = new WebSocket(wsAddress);
+      socket = new WebSocket(wsAddress, apiToken ? [`hive-auth.${apiToken}`] : []);
       socket.onopen = () => { retryDelay = 1000; setConnected(true); };
       socket.onmessage = (msg) => {
         try {
@@ -66,7 +67,23 @@ function App() {
     };
     connect();
     return () => { stopped = true; clearInterval(metricsTimer); if (reconnectTimer) clearTimeout(reconnectTimer); socket?.close(); };
-  }, []);
+  }, [apiAddress, apiToken, wsAddress]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams({ q: query, limit: '500' });
+      if (filter !== 'all') params.set('service', filter);
+      const headers = apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined;
+      fetch(`${apiAddress}/api/search?${params}`, { headers }).then((response) => response.ok ? response.json() : null).then((result: { events?: Event[] } | null) => {
+        if (result?.events) setEvents((current) => {
+          const merged = new Map(result.events!.map((item) => [item.id, item]));
+          for (const item of current) if (!merged.has(item.id) && Date.now() - Date.parse(item.timestamp) < 30000) merged.set(item.id, item);
+          return [...merged.values()].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp)).slice(0, 500);
+        });
+      }).catch(() => undefined);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [apiAddress, apiToken, filter, query]);
 
   const visibleEvents = useMemo(() => events.filter((item) => {
     const matchesService = filter === 'all' || item.service.toLowerCase() === filter;
@@ -117,7 +134,7 @@ function App() {
           <article className="stat-card"><div className="stat-label"><Activity size={15} /> EVENTS IN VIEW</div><strong>{events.length}</strong><span>Most recent 500 events</span></article>
           <article className="stat-card"><div className="stat-label"><AlertTriangle size={15} /> AUTH / EXPLOIT SIGNALS</div><strong>{attacks}</strong><span>Heuristic event categories</span></article>
           <article className="stat-card"><div className="stat-label"><Globe2 size={15} /> UNIQUE SOURCES</div><strong>{uniqueSources}</strong><span>Distinct source IPs in view</span></article>
-          <article className="stat-card"><div className="stat-label"><Database size={15} /> DELIVERY / STORAGE</div><strong>{dropped}</strong><span>{journalErrors} journal write errors · {dropped} dropped deliveries</span></article>
+          <article className={`stat-card ${dropped || journalErrors ? 'health-warning' : ''}`}><div className="stat-label"><Database size={15} /> DELIVERY / STORAGE</div><strong>{dropped + journalErrors}</strong><span>{journalErrors} journal write errors · {dropped} dropped deliveries</span></article>
         </section>
 
         <section className="stream-card">
@@ -138,7 +155,7 @@ function App() {
               <td className="payload-cell" title={item.payload}>{item.payload || '—'}</td>
               <td className="mitre-cell">{item.mitre_techniques?.length ? item.mitre_techniques.map((technique) => <code key={technique}>{technique}</code>) : '—'}</td>
             </tr>)}</tbody></table></div>
-          <footer className="stream-footer"><span><span className={`footer-dot ${connected ? 'on' : ''}`} />{connected ? 'Receiving live events' : 'Trying to reconnect'}</span><span><ArrowDownToLine size={14} /> Recent window from local journal · no indexed search</span></footer>
+          <footer className="stream-footer"><span><span className={`footer-dot ${connected ? 'on' : ''}`} />{connected ? 'Receiving live events' : 'Trying to reconnect'}</span><span><ArrowDownToLine size={14} /> Search covers retained journal events · CSV exports current results</span></footer>
         </section>
         <div className="safety-note"><Shield size={15} /><span>Honeypot telemetry can contain sensitive, attacker-supplied data. Restrict dashboard access and configure retention before external deployment.</span></div>
         </>}

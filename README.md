@@ -123,6 +123,8 @@ Set environment variables before launching the backend. The local defaults keep 
 | `HIVE_REDIS_ADDR` | `127.0.0.1:<port>` | Redis bind address |
 | `HIVE_API_ADDR` | `127.0.0.1:<port>` | API bind address |
 | `HIVE_ALLOWED_ORIGINS` | Local Vite origins | Comma-separated browser origins allowed by CORS and WebSocket checks |
+| `HIVE_API_TOKEN` | unset | Optional bearer token for API and WebSocket. Required whenever `HIVE_API_ADDR` binds to a non-loopback address. Set the matching `VITE_HIVE_API_TOKEN` for the dashboard. |
+| `HIVE_RETENTION_DAYS` | unset | Delete journal records older than this many days at startup; rotated and active JSONL files are both pruned. |
 | `VITE_WS_URL` | Derived from dashboard host | Optional WebSocket URL for a remote dashboard |
 | `VITE_HIVE_SITE_URL` | `http(s)://<dashboard-host>:8080/` | Optional URL used by the dashboard’s decoy-site preview |
 
@@ -134,10 +136,22 @@ To deliberately expose a decoy on a sensor host, set only the needed `HIVE_*_ADD
 |---|---|
 | `GET /api/health` | Process health and sensor ID |
 | `GET /api/events?limit=100` | Recent in-memory events, newest first; maximum 500 |
+| `GET /api/search?q=...&service=ssh&limit=100&offset=0` | Search the active and rotated JSONL journal, newest first; maximum page size 500 |
 | `GET /api/metrics` | Subscriber count, dropped deliveries, and journal errors |
 | `GET /ws/events` | Live event stream |
 
-The journal is local JSONL rather than an indexed database. It rotates at 64 MiB and keeps one backup. The dashboard currently has no pagination or historical search. A full browser can miss events if its subscriber queue fills; dropped deliveries and journal write errors are exposed through `/api/metrics`.
+The journal is local JSONL rather than an indexed database. It rotates at 64 MiB and keeps one backup. Search scans those bounded journal files; large captures will benefit from a future indexed database. The dashboard searches the journal and exports the current filtered results to CSV. A browser can miss live events if its subscriber queue fills; dropped deliveries and journal write errors appear in the dashboard and `/api/metrics`.
+
+### Container profile
+
+Set a token and start the isolated local profile:
+
+```sh
+export HIVE_API_TOKEN="$(openssl rand -hex 32)"
+docker compose up --build
+```
+
+The dashboard is at `http://127.0.0.1:5173`. All published ports bind to loopback by default, telemetry persists in the `hive-data` volume, containers drop Linux capabilities, and the backend runs read-only except for its data volume. Keep the token private: the dashboard build includes it so the browser can authenticate. Change the token by rebuilding the dashboard and restarting the backend. Set `HIVE_RETENTION_DAYS` to control journal retention (30 days by default in Compose).
 
 ## Generated data
 

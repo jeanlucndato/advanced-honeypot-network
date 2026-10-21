@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -40,11 +41,15 @@ func StartServer(port string) {
 	if token := strings.TrimSpace(os.Getenv("HIVE_API_TOKEN")); token != "" {
 		r.Use(func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				supplied := req.Header.Get("Authorization")
-				if req.URL.Path == "/ws/events" && supplied == "" {
-					supplied = "Bearer " + req.URL.Query().Get("token")
+				supplied := req.Header.Get("Authorization") == "Bearer "+token
+				if req.URL.Path == "/ws/events" {
+					for _, protocol := range websocketProtocols(req.Header.Get("Sec-WebSocket-Protocol")) {
+						if protocol == "hive-auth."+token {
+							supplied = true
+						}
+					}
 				}
-				if supplied != "Bearer "+token {
+				if !supplied {
 					http.Error(w, "unauthorized", http.StatusUnauthorized)
 					return
 				}
@@ -105,11 +110,25 @@ func StartServer(port string) {
 	if addr == "" {
 		addr = "127.0.0.1:" + port
 	}
+	if host, _, splitErr := net.SplitHostPort(addr); splitErr == nil && os.Getenv("HIVE_API_TOKEN") == "" {
+		ip := net.ParseIP(host)
+		if host == "0.0.0.0" || host == "::" || ip == nil || !ip.IsLoopback() {
+			log.Fatal("HIVE_API_TOKEN is required when HIVE_API_ADDR is not loopback")
+		}
+	}
 	server := &http.Server{Addr: addr, Handler: r, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	err := server.ListenAndServe()
 	if err != nil {
 		log.Printf("Failed to start API server: %v", err)
 	}
+}
+
+func websocketProtocols(value string) []string {
+	parts := strings.Split(value, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	return parts
 }
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +139,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			allowed[i] = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(allowed[i], "http://"), "https://"))
 		}
 	}
-	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: allowed})
+	protocols := []string{}
+	if token := os.Getenv("HIVE_API_TOKEN"); token != "" {
+		protocols = append(protocols, "hive-auth."+token)
+	}
+	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: allowed, Subprotocols: protocols})
 	if err != nil {
 		log.Printf("WebSocket Accept error: %v", err)
 		return

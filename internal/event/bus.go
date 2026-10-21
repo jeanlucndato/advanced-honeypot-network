@@ -123,10 +123,18 @@ func (eb *EventBus) Search(query, service string, limit, offset int) ([]types.Ev
 	query, service = strings.ToLower(query), strings.ToLower(service)
 	paths := []string{}
 	eb.mu.RLock()
+	defer eb.mu.RUnlock()
 	base := eb.journalPath
-	eb.mu.RUnlock()
 	if base == "" {
-		return eb.Recent(limit), len(eb.history), nil
+		total := len(eb.history)
+		if limit <= 0 || limit > total {
+			limit = total
+		}
+		out := make([]types.Event, limit)
+		for i := 0; i < limit; i++ {
+			out[i] = eb.history[total-1-i]
+		}
+		return out, total, nil
 	}
 	paths = append(paths, base+".1", base)
 	matches := make([]types.Event, 0)
@@ -190,6 +198,13 @@ func (eb *EventBus) ApplyRetention(days int) error {
 	}
 	eb.journal = nil
 	cutoff := time.Now().AddDate(0, 0, -days)
+	keptHistory := eb.history[:0]
+	for _, item := range eb.history {
+		if !item.Timestamp.Before(cutoff) {
+			keptHistory = append(keptHistory, item)
+		}
+	}
+	eb.history = keptHistory
 	for _, p := range []string{eb.journalPath + ".1", eb.journalPath} {
 		f, err := os.Open(p)
 		if os.IsNotExist(err) {
