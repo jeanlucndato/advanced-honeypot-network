@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Hive – Advanced Honeypot Network | Jeanluck Cyber Insights</title>
-    <meta name="description" content="Hive is an interactive honeypot network that turns activity against SSH, HTTP, MySQL, and Redis decoys into searchable, live telemetry." />
-    <meta name="keywords" content="Honeypot, Cyber Deception, Go, React, TypeScript, WebSocket, Threat Intelligence, SSH, HTTP, MySQL, Redis, Cybersecurity" />
+    <title>Hive — Réseau de honeypots interactifs | Jeanluck Cyber Insights</title>
+    <meta name="description" content="Hive transforme l’activité dirigée vers des services leurres en télémétrie consultable en direct. Quatre capteurs Go observent les interactions SSH, HTTP, MySQL et Redis et transmettent des événements structurés à un tableau de bord React et TypeScript." />
+    <meta name="keywords" content="Honeypot, Cyberdéception, Go, React, TypeScript, WebSocket, Threat Intelligence, SSH, HTTP, MySQL, Redis, Cybersecurity" />
 
     <!-- Favicons -->
     <link href="assets/img/favicon.png" rel="icon" />
@@ -556,6 +556,9 @@
       }
       .cti-arrow { color: rgba(255,255,255,0.25); font-size: 1rem; }
 
+      .hive-zoom-image { cursor: zoom-in; transition: transform 220ms ease, box-shadow 220ms ease; }
+      .hive-zoom-image:hover { transform: scale(1.015); box-shadow: 0 14px 36px rgba(0,0,0,.35); }
+
       /* ── Responsive adjustments ─────────────────────────────── */
       @media (max-width: 768px) {
         .arch-row-multi { grid-template-columns: 1fr 1fr; }
@@ -578,9 +581,9 @@
         </a>
         <nav id="navmenu" class="navmenu">
           <ul>
-            <li><a href="index.html#hero" class="active">Home</a></li>
-            <li><a href="index.html#Apropos">About</a></li>
-            <li><a href="index.html#portfolio">Projects &amp; Case Studies</a></li>
+            <li><a href="index.html#hero" class="active">Accueil</a></li>
+            <li><a href="index.html#Apropos">À propos</a></li>
+            <li><a href="index.html#portfolio">Projets et études de cas</a></li>
             <li><a href="index.html#contact">Contact</a></li>
           </ul>
           <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
@@ -594,19 +597,19 @@
         <div class="container">
           <div class="hive-hero-content" data-aos="fade-up">
             <div class="hive-meta-row mb-3" style="font-size:0.8rem;">
-              <a href="index.html" style="color:var(--hive-amber);text-decoration:none;"><i class="bi bi-house-fill"></i> Home</a>
-              <span>/</span><span>Project case study</span><span>/</span><span>Hive</span>
+              <a href="index.html" style="color:var(--hive-amber);text-decoration:none;"><i class="bi bi-house-fill"></i> Accueil</a>
+              <span>/</span><span>Étude de cas</span><span>/</span><span>Hive</span>
             </div>
-            <div class="hive-featured-badge"><span class="dot"></span> Security engineering portfolio project</div>
-            <h1 class="hive-hero-title">Hive — <span class="accent">Interactive</span><br>Honeypot Network</h1>
-            <p class="hive-hero-subtitle">Hive turns activity against decoy services into searchable, live telemetry. Four Go sensors observe SSH, HTTP, MySQL, and Redis interactions and stream structured events to a React and TypeScript operator dashboard.</p>
+            <div class="hive-featured-badge"><span class="dot"></span> Projet de portfolio en ingénierie de sécurité</div>
+            <h1 class="hive-hero-title">Hive — <span class="accent">Réseau</span><br>de honeypots interactifs</h1>
+            <p class="hive-hero-subtitle">Hive transforme l’activité dirigée vers des services leurres en télémétrie consultable en direct. Quatre capteurs Go observent les interactions SSH, HTTP, MySQL et Redis et transmettent des événements structurés à un tableau de bord React et TypeScript.</p>
             <div class="hive-tags-row">
               <span class="hive-tag tag-go">Go</span><span class="hive-tag tag-react">React</span><span class="hive-tag tag-ws">TypeScript · WebSockets</span><span class="hive-tag tag-cyber">TCP/IP</span><span class="hive-tag tag-stix">JSONL · STIX 2.1</span><span class="hive-tag tag-ssh">Docker Compose</span>
             </div>
             <div class="hive-meta-row">
-              <span><i class="bi bi-diagram-3"></i> Four protocol sensors</span>
-              <span><i class="bi bi-broadcast"></i> Live event stream</span>
-              <span><i class="bi bi-shield-check"></i> Local-first, isolated lab</span>
+              <span><i class="bi bi-diagram-3"></i> Quatre capteurs de protocoles</span>
+              <span><i class="bi bi-broadcast"></i> Flux d’événements en direct</span>
+              <span><i class="bi bi-shield-check"></i> Laboratoire isolé, local par défaut</span>
             </div>
           </div>
         </div>
@@ -615,14 +618,14 @@
       <section class="hive-metrics">
         <div class="container">
           <div class="text-center mb-4" data-aos="fade-up">
-            <p class="hive-section-title">Project at a glance</p>
-            <h2 class="hive-section-heading">From decoy interaction to investigation</h2>
+            <p class="hive-section-title">Le projet en bref</p>
+            <h2 class="hive-section-heading">De l’interaction avec le leurre à l’analyse</h2>
           </div>
           <div class="row g-4" data-aos="fade-up" data-aos-delay="100">
-            <div class="col-lg-3 col-md-6"><div class="metric-card amber"><div class="metric-icon"><i class="bi bi-hdd-network"></i></div><div class="metric-value">4</div><div class="metric-label">Protocol sensors</div><div class="metric-desc">SSH, HTTP, MySQL, and Redis decoys each normalize observed activity into events.</div></div></div>
-            <div class="col-lg-3 col-md-6"><div class="metric-card teal"><div class="metric-icon"><i class="bi bi-arrow-left-right"></i></div><div class="metric-value">Live</div><div class="metric-label">Operator feed</div><div class="metric-desc">A WebSocket stream delivers new events alongside searchable journal history.</div></div></div>
-            <div class="col-lg-3 col-md-6"><div class="metric-card green"><div class="metric-icon"><i class="bi bi-journal-text"></i></div><div class="metric-value">JSONL</div><div class="metric-label">Local journal</div><div class="metric-desc">Events are retained in rotating, bounded local files for later search and review.</div></div></div>
-            <div class="col-lg-3 col-md-6"><div class="metric-card red"><div class="metric-icon"><i class="bi bi-shield-lock"></i></div><div class="metric-value">Safe</div><div class="metric-label">Controlled response</div><div class="metric-desc">Firewall suggestions are exported for inspection and are never applied automatically.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card amber"><div class="metric-icon"><i class="bi bi-hdd-network"></i></div><div class="metric-value">4</div><div class="metric-label">Capteurs de protocoles</div><div class="metric-desc">Les leurres SSH, HTTP, MySQL et Redis convertissent chacun l’activité observée en événements structurés.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card teal"><div class="metric-icon"><i class="bi bi-arrow-left-right"></i></div><div class="metric-value">En direct</div><div class="metric-label">Flux opérateur</div><div class="metric-desc">Un flux WebSocket transmet les nouveaux événements, en complément de l’historique consultable.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card green"><div class="metric-icon"><i class="bi bi-journal-text"></i></div><div class="metric-value">JSONL</div><div class="metric-label">Journal local</div><div class="metric-desc">Les événements sont conservés dans des fichiers locaux à rotation et taille limitée, pour être recherchés et examinés ultérieurement.</div></div></div>
+            <div class="col-lg-3 col-md-6"><div class="metric-card red"><div class="metric-icon"><i class="bi bi-shield-lock"></i></div><div class="metric-value">Sûr</div><div class="metric-label">Réponse sous contrôle</div><div class="metric-desc">Les suggestions de règles pare-feu sont exportées pour examen et ne sont jamais appliquées automatiquement.</div></div></div>
           </div>
         </div>
       </section>
@@ -630,29 +633,29 @@
       <section class="hive-section hive-section-dark">
         <div class="container">
           <div class="row mb-5" data-aos="fade-up"><div class="col-lg-8">
-            <p class="hive-section-title">Engineering highlights</p>
-            <h2 class="hive-section-heading">A complete <span class="accent">event-to-operator workflow</span></h2>
-            <p class="hive-section-lead">The project demonstrates network protocol handling, concurrent event delivery, input sanitization, journaled storage, API and WebSocket design, containerized deployment, and an operator-focused interface.</p>
+            <p class="hive-section-title">Points forts techniques</p>
+            <h2 class="hive-section-heading">Un flux complet <span class="accent">de l’événement à l’opérateur</span></h2>
+            <p class="hive-section-lead">Le projet met en œuvre la gestion de protocoles réseau, la diffusion concurrente d’événements, l’assainissement des entrées, le stockage journalisé, la conception d’API et de WebSocket, le déploiement conteneurisé et une interface pensée pour les opérateurs.</p>
           </div></div>
           <div class="row g-4">
-            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-amber"><i class="bi bi-hdd-network"></i></div><h4>Protocol-aware sensors</h4><p>Separate Go sensors observe SSH, HTTP, MySQL handshakes, and Redis RESP traffic. Each emits a shared event shape while keeping protocol behavior intentionally limited to a decoy.</p><ul><li>HTTP includes a decoy website and records link clicks and form submissions.</li><li>MySQL captures a bounded login handshake and responds with access denied.</li><li>Redis handles a limited set of inline and RESP commands.</li></ul></div></div>
-            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-teal"><i class="bi bi-arrow-repeat"></i></div><h4>Bounded event delivery</h4><p>A typed event bus enriches events with IDs and sensor metadata, applies heuristic ATT&amp;CK tags, writes the journal, keeps a recent in-memory window, and fans out to bounded subscriber queues.</p><ul><li>Slow dashboard clients do not block sensor handlers.</li><li>Dropped deliveries and journal errors are surfaced as operational health signals.</li><li>The dashboard combines journal search with a reconnecting WebSocket feed.</li></ul></div></div>
-            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-green"><i class="bi bi-file-earmark-code"></i></div><h4>Useful, reviewable outputs</h4><p>Operators can inspect event details, search retained history, export filtered results to CSV, and review threat-intelligence artifacts.</p><ul><li>Valid source IPs can be represented as STIX 2.1 indicators.</li><li>Suggested firewall commands are written to a file for manual review.</li><li>ATT&amp;CK mappings are investigative heuristics, not proof of malicious intent.</li></ul></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-amber"><i class="bi bi-hdd-network"></i></div><h4>Des capteurs adaptés aux protocoles</h4><p>Des capteurs Go distincts observent SSH, HTTP, les échanges d’authentification MySQL et le trafic Redis RESP. Chacun produit des événements au format commun, avec un comportement volontairement limité au leurre.</p><ul><li>Le capteur HTTP héberge un site leurre et journalise les clics sur les liens ainsi que les soumissions de formulaire.</li><li>Le capteur MySQL analyse une poignée de main de connexion limitée et répond par un refus d’accès.</li><li>Le capteur Redis traite un ensemble limité de commandes en ligne et RESP.</li></ul></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-teal"><i class="bi bi-arrow-repeat"></i></div><h4>Diffusion maîtrisée des événements</h4><p>Un bus d’événements typé ajoute des identifiants et les métadonnées du capteur, applique des étiquettes ATT&amp;CK heuristiques, alimente le journal, conserve une fenêtre récente en mémoire et distribue les événements dans des files d’abonnés de taille limitée.</p><ul><li>Les clients lents du tableau de bord ne bloquent pas les capteurs.</li><li>Les pertes de diffusion et les erreurs d’écriture du journal apparaissent dans les indicateurs d’état opérationnel.</li><li>Le tableau de bord associe la recherche dans le journal à un flux WebSocket qui se reconnecte automatiquement.</li></ul></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><div class="card-icon-wrap icon-green"><i class="bi bi-file-earmark-code"></i></div><h4>Des résultats utiles et vérifiables</h4><p>Les opérateurs peuvent consulter les détails des événements, rechercher dans l’historique conservé, exporter les résultats filtrés en CSV et examiner les artefacts de renseignement sur les menaces.</p><ul><li>Les adresses IP sources valides peuvent être exportées comme indicateurs STIX 2.1.</li><li>Les commandes pare-feu suggérées sont écrites dans un fichier destiné à une vérification manuelle.</li><li>Les correspondances ATT&amp;CK sont des heuristiques d’analyse, et non une preuve d’intention malveillante.</li></ul></div></div>
           </div>
         </div>
       </section>
 
       <section class="hive-section hive-section-mid">
         <div class="container">
-          <div class="text-center mb-5" data-aos="fade-up"><p class="hive-section-title">System design</p><h2 class="hive-section-heading">Architecture &amp; <span class="accent">event flow</span></h2><p class="hive-section-lead mx-auto">Each sensor observes a connection, publishes a sanitized event, and leaves investigation and response decisions with the operator.</p></div>
+          <div class="text-center mb-5" data-aos="fade-up"><p class="hive-section-title">Conception du système</p><h2 class="hive-section-heading">Architecture et <span class="accent">flux des événements</span></h2><p class="hive-section-lead mx-auto">Chaque capteur observe une connexion et publie un événement assaini. L’analyse et les décisions de réponse restent du ressort de l’opérateur.</p></div>
           <div class="arch-diagram" data-aos="zoom-in">
             <div class="arch-flow">
-              <div class="arch-row"><div class="arch-node node-attackers"><div class="node-label">Decoy interactions</div><div class="node-desc">SSH · HTTP · MySQL · Redis</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
-              <div class="arch-row-multi"><div class="arch-node node-go"><div class="node-label">SSH sensor</div><div class="node-desc">Fake shell · commands recorded, never executed</div></div><div class="arch-node node-go"><div class="node-label">HTTP sensor</div><div class="node-desc">Requests and decoy-site interactions</div></div><div class="arch-node node-go"><div class="node-label">MySQL sensor</div><div class="node-desc">Bounded handshake · no SQL sessions</div></div><div class="arch-node node-go"><div class="node-label">Redis sensor</div><div class="node-desc">Limited inline and RESP handling</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
-              <div class="arch-row"><div class="arch-node node-eventbus"><div class="node-label">Typed event bus</div><div class="node-desc">Enrich · journal · retain recent events · fan out to bounded queues</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
-              <div class="arch-row-multi"><div class="arch-node node-mitre"><div class="node-label">Searchable history</div><div class="node-desc">Rotating JSONL journal · retention controls</div></div><div class="arch-node node-mitre"><div class="node-label">Threat-intelligence output</div><div class="node-desc">Heuristic ATT&amp;CK tags · STIX indicators · advisory firewall file</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
-              <div class="arch-row"><div class="arch-node node-api"><div class="node-label">HTTP API &amp; WebSocket</div><div class="node-desc">Health · metrics · event search · live stream</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
-              <div class="arch-row"><div class="arch-node node-react"><div class="node-label">React + TypeScript operator dashboard</div><div class="node-desc">Live feed · filters · event detail · decoy-site preview · CSV export</div></div></div>
+              <div class="arch-row"><div class="arch-node node-attackers"><div class="node-label">Interactions avec les leurres</div><div class="node-desc">SSH · HTTP · MySQL · Redis</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row-multi"><div class="arch-node node-go"><div class="node-label">Capteur SSH</div><div class="node-desc">Faux shell · commandes journalisées, jamais exécutées</div></div><div class="arch-node node-go"><div class="node-label">Capteur HTTP</div><div class="node-desc">Requêtes et interactions avec le site leurre</div></div><div class="arch-node node-go"><div class="node-label">Capteur MySQL</div><div class="node-desc">Poignée de main limitée · aucune session SQL</div></div><div class="arch-node node-go"><div class="node-label">Capteur Redis</div><div class="node-desc">Prise en charge limitée des commandes en ligne et RESP</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row"><div class="arch-node node-eventbus"><div class="node-label">Bus d’événements typé</div><div class="node-desc">Enrichir · journaliser · conserver les événements récents · diffuser dans des files limitées</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row-multi"><div class="arch-node node-mitre"><div class="node-label">Historique consultable</div><div class="node-desc">Journal JSONL à rotation · contrôle de la rétention</div></div><div class="arch-node node-mitre"><div class="node-label">Résultats de renseignement sur les menaces</div><div class="node-desc">Étiquettes ATT&amp;CK heuristiques · indicateurs STIX · fichier de suggestions pare-feu</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row"><div class="arch-node node-api"><div class="node-label">API HTTP et WebSocket</div><div class="node-desc">État · métriques · recherche d’événements · flux en direct</div></div></div><div class="arch-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="arch-row"><div class="arch-node node-react"><div class="node-label">Tableau de bord opérateur React et TypeScript</div><div class="node-desc">Flux en direct · filtres · détails des événements · aperçu du site leurre · export CSV</div></div></div>
             </div>
           </div>
         </div>
@@ -661,37 +664,37 @@
       <section class="hive-section hive-section-dark">
         <div class="container">
           <div class="row align-items-center g-5">
-            <div class="col-lg-5"><p class="hive-section-title">See it in action</p><h2 class="hive-section-heading">The dashboard keeps the <span class="accent">operator in context</span></h2><p class="hive-section-lead">The interface brings live sensor activity, retained history, delivery health, and a connected decoy-site preview into one investigation workflow.</p><ul style="color:rgba(255,255,255,.65);line-height:1.9;padding-left:1.2rem"><li>Search events by query and service.</li><li>Open an event for its structured details.</li><li>Review subscriber and journal health signals.</li><li>Export the currently filtered results to CSV.</li></ul></div>
-            <div class="col-lg-7"><figure class="mb-4"><img src="assets/img/hive/Hive dashboard.png" alt="Hive live event dashboard" class="img-fluid rounded-4" loading="lazy"><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">Hive operator dashboard with event telemetry.</figcaption></figure></div>
+            <div class="col-lg-5"><p class="hive-section-title">Voir Hive en action</p><h2 class="hive-section-heading">Le tableau de bord donne à l’<span class="accent">opérateur tout le contexte</span></h2><p class="hive-section-lead">L’interface réunit dans un même flux d’analyse l’activité des capteurs en direct, l’historique conservé, l’état de diffusion et un aperçu interactif du site leurre. Cliquez sur une capture pour l’agrandir ; vous pourrez ensuite parcourir les images de la galerie.</p><ul style="color:rgba(255,255,255,.65);line-height:1.9;padding-left:1.2rem"><li>Rechercher des événements par requête et par service.</li><li>Ouvrir un événement pour consulter ses détails structurés.</li><li>Surveiller l’état des abonnés et du journal.</li><li>Exporter au format CSV les résultats filtrés.</li></ul></div>
+            <div class="col-lg-7"><figure class="mb-4"><a href="assets/img/hive/Hive dashboard.png" class="glightbox" data-gallery="hive-gallery" data-title="Tableau de bord Hive avec événements en direct" aria-label="Agrandir l’image : Tableau de bord Hive avec événements en direct"><img src="assets/img/hive/Hive dashboard.png" alt="Tableau de bord Hive avec événements en direct" class="img-fluid rounded-4 hive-zoom-image" loading="lazy"></a><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">Tableau de bord Hive et télémétrie des événements.</figcaption></figure></div>
           </div>
-          <div class="row g-4 mt-2"><div class="col-md-6"><figure><img src="assets/img/hive/Decoy website landing page.png" alt="Inversehacker decoy website landing page" class="img-fluid rounded-4" loading="lazy"><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">The HTTP sensor serves the responsive decoy website.</figcaption></figure></div><div class="col-md-6"><figure><img src="assets/img/hive/Hive Decoy website.png" alt="Hive dashboard displaying the decoy website preview" class="img-fluid rounded-4" loading="lazy"><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">The embedded preview keeps decoy interactions connected to the live event feed.</figcaption></figure></div></div>
+          <div class="row g-4 mt-2"><div class="col-md-6"><figure><a href="assets/img/hive/Decoy website landing page.png" class="glightbox" data-gallery="hive-gallery" data-title="Page d’accueil du site leurre Inversehacker" aria-label="Agrandir l’image : Page d’accueil du site leurre Inversehacker"><img src="assets/img/hive/Decoy website landing page.png" alt="Page d’accueil du site leurre Inversehacker" class="img-fluid rounded-4 hive-zoom-image" loading="lazy"></a><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">Le capteur HTTP sert le site leurre adaptatif.</figcaption></figure></div><div class="col-md-6"><figure><a href="assets/img/hive/Hive Decoy website.png" class="glightbox" data-gallery="hive-gallery" data-title="Tableau de bord Hive affichant l’aperçu du site leurre" aria-label="Agrandir l’image : Tableau de bord Hive affichant l’aperçu du site leurre"><img src="assets/img/hive/Hive Decoy website.png" alt="Tableau de bord Hive affichant l’aperçu du site leurre" class="img-fluid rounded-4 hive-zoom-image" loading="lazy"></a><figcaption class="mt-2" style="color:rgba(255,255,255,.5)">L’aperçu intégré relie les interactions avec le leurre au flux d’événements en direct.</figcaption></figure></div></div>
         </div>
       </section>
 
       <section class="hive-section hive-section-mid">
         <div class="container">
-          <div class="row mb-5"><div class="col-lg-8"><p class="hive-section-title">Try the workflow</p><h2 class="hive-section-heading">Run locally in an <span class="accent">isolated lab</span></h2><p class="hive-section-lead">The source project requires Go 1.26.4+ and Node.js 20.19+ or 22.12+ with npm. From its repository root, launch the local services and keep the terminal open:</p></div></div>
-          <div class="terminal-window"><div class="terminal-header"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">Local launch</span></div><div class="terminal-body"><div><span class="t-prompt">$ </span><span class="t-cmd">./run-local.sh</span></div><div><span class="t-output">Dashboard: 127.0.0.1:5173</span></div><div><span class="t-output">Decoy site: 127.0.0.1:8080</span></div><div><span class="t-output">Health API: 127.0.0.1:8000/api/health</span></div></div></div>
+          <div class="row mb-5"><div class="col-lg-8"><p class="hive-section-title">Parcourir le scénario</p><h2 class="hive-section-heading">Lancer Hive dans un <span class="accent">laboratoire isolé</span></h2><p class="hive-section-lead">Le projet source requiert Go 1.26.4 ou une version ultérieure, ainsi que Node.js 20.19+ ou 22.12+ avec npm. Depuis la racine du dépôt, lancez les services locaux et laissez le terminal ouvert :</p></div></div>
+          <div class="terminal-window"><div class="terminal-header"><span class="terminal-dot dot-red"></span><span class="terminal-dot dot-yellow"></span><span class="terminal-dot dot-green"></span><span class="terminal-title">Démarrage local</span></div><div class="terminal-body"><div><span class="t-prompt">$ </span><span class="t-cmd">./run-local.sh</span></div><div><span class="t-output">Tableau de bord : 127.0.0.1:5173</span></div><div><span class="t-output">Site leurre : 127.0.0.1:8080</span></div><div><span class="t-output">API d’état : 127.0.0.1:8000/api/health</span></div></div></div>
           <div class="row g-4 mt-3">
-            <div class="col-lg-4"><div class="deepdive-card"><h4>1 · Explore the decoy site</h4><p>Open the dashboard, choose <strong>Decoy website</strong> in the sidebar, then use its navigation and call-to-action links. The page stays loaded while link-click events are sent to Hive.</p></div></div>
-            <div class="col-lg-4"><div class="deepdive-card"><h4>2 · Submit the demo form</h4><p>The inquiry form returns a simulated confirmation and records which field names were submitted. Submitted values are discarded by this interaction endpoint.</p></div></div>
-            <div class="col-lg-4"><div class="deepdive-card"><h4>3 · Connect to the SSH decoy</h4><p>In a second terminal, connect with <code>ssh -p 2222 root@127.0.0.1</code>, enter any password, and try <code>whoami</code> or <code>ps</code>. The fake shell records commands; it does not run them on the host.</p></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><h4>1 · Explorer le site leurre</h4><p>Ouvrez le tableau de bord, choisissez <strong>Site leurre</strong> dans la barre latérale, puis utilisez la navigation et les liens d’action. La page reste chargée tandis que Hive reçoit les événements de clic.</p></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><h4>2 · Envoyer le formulaire de démonstration</h4><p>Le formulaire de contact affiche une confirmation simulée et journalise les noms des champs envoyés. Ce point de terminaison ne conserve pas les valeurs saisies.</p></div></div>
+            <div class="col-lg-4"><div class="deepdive-card"><h4>3 · Se connecter au leurre SSH</h4><p>Dans un second terminal, connectez-vous avec <code>ssh -p 2222 root@127.0.0.1</code>, saisissez n’importe quel mot de passe, puis essayez <code>whoami</code> ou <code>ps</code>. Le faux shell journalise les commandes sans les exécuter sur la machine hôte.</p></div></div>
           </div>
-          <div class="deepdive-card mt-4"><h4>Generate sample traffic</h4><p class="mb-2">A simple HTTP request is enough to create a sample event:</p><code>curl http://127.0.0.1:8080/wp-login.php</code><p class="mt-3 mb-2">If the client tools are installed, Redis and MySQL also accept sample connections:</p><code>redis-cli -h 127.0.0.1 -p 6379 PING</code><br><code>mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u demo</code></div>
+          <div class="deepdive-card mt-4"><h4>Générer du trafic de démonstration</h4><p class="mb-2">Une simple requête HTTP suffit à générer un événement de démonstration :</p><code>curl http://127.0.0.1:8080/wp-login.php</code><p class="mt-3 mb-2">Si les outils clients sont installés, vous pouvez également tester des connexions Redis et MySQL :</p><code>redis-cli -h 127.0.0.1 -p 6379 PING</code><br><code>mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u demo</code></div>
         </div>
       </section>
 
       <section class="hive-section hive-section-dark">
-        <div class="container"><div class="row mb-5"><div class="col-lg-8"><p class="hive-section-title">Boundaries and data handling</p><h2 class="hive-section-heading">Decoys by design, with <span class="accent">clear limits</span></h2><p class="hive-section-lead">Hive is a development-stage security lab, not a production SOC platform. Protocol behavior is intentionally limited; collected data and generated outputs need operator review.</p></div></div>
+        <div class="container"><div class="row mb-5"><div class="col-lg-8"><p class="hive-section-title">Limites et traitement des données</p><h2 class="hive-section-heading">Des leurres conçus avec des <span class="accent">limites explicites</span></h2><p class="hive-section-lead">Hive est un laboratoire de sécurité en développement, et non une plateforme SOC prête pour la production. Les protocoles sont volontairement limités ; les données recueillies et les résultats générés doivent être vérifiés par un opérateur.</p></div></div>
           <div class="row g-4">
-            <div class="col-md-6"><div class="deepdive-card"><h4>What each sensor records</h4><ul><li><strong>SSH:</strong> usernames and commands; passwords are discarded. The shell is simulated and never executes host commands.</li><li><strong>HTTP:</strong> method, path, user agent, bounded request body, decoy link clicks, and form field names. Form values are discarded; other request bodies can still contain sensitive input.</li><li><strong>MySQL:</strong> username from a bounded handshake. The sensor does not store the password response or implement SQL sessions.</li><li><strong>Redis:</strong> commands from inline and RESP requests, with AUTH values and common secret assignments redacted.</li></ul></div></div>
-            <div class="col-md-6"><div class="deepdive-card"><h4>Operational limits</h4><ul><li>Local journal is rotating JSONL, not an indexed database; search scans bounded journal files.</li><li>ATT&amp;CK tags are heuristic, and IP indicators are leads for investigation rather than verdicts.</li><li>The browser retains up to 500 events; a full subscriber queue can drop live deliveries.</li><li>Redaction is best effort. Review retention, access, and legal requirements before collecting beyond a local lab.</li><li>Firewall suggestions are advisory text. Inspect and adapt them manually; never execute the file directly.</li></ul></div></div>
+            <div class="col-md-6"><div class="deepdive-card"><h4>Données recueillies par chaque capteur</h4><ul><li><strong>SSH :</strong> noms d’utilisateur et commandes ; les mots de passe sont écartés. Le shell est simulé et n’exécute aucune commande sur l’hôte.</li><li><strong>HTTP :</strong> méthode, chemin, agent utilisateur, corps de requête limité, clics sur les liens du leurre et noms des champs de formulaire. Les valeurs du formulaire sont écartées ; d’autres corps de requête peuvent néanmoins contenir des données sensibles.</li><li><strong>MySQL :</strong> nom d’utilisateur extrait d’une poignée de main limitée. Le capteur ne stocke pas la réponse contenant le mot de passe et ne prend pas en charge les sessions SQL.</li><li><strong>Redis :</strong> commandes issues de requêtes en ligne et RESP ; les valeurs AUTH et les affectations de secrets courantes sont masquées.</li></ul></div></div>
+            <div class="col-md-6"><div class="deepdive-card"><h4>Limites opérationnelles</h4><ul><li>Le journal local est un fichier JSONL à rotation, et non une base indexée ; la recherche parcourt des fichiers de taille limitée.</li><li>Les étiquettes ATT&amp;CK sont heuristiques et les indicateurs IP sont des pistes d’analyse, pas des conclusions.</li><li>Le navigateur conserve jusqu’à 500 événements ; une file d’abonné saturée peut entraîner la perte d’événements en direct.</li><li>Le masquage des données est effectué au mieux. Avant toute collecte hors d’un laboratoire local, vérifiez les règles de conservation, d’accès et les obligations légales.</li><li>Les suggestions de règles pare-feu sont indicatives. Vérifiez-les et adaptez-les manuellement ; n’exécutez jamais directement le fichier.</li></ul></div></div>
           </div>
         </div>
       </section>
 
       <section class="hive-section hive-section-mid">
-        <div class="container"><div class="row justify-content-center"><div class="col-lg-10"><div class="ethics-card"><h4>Deployment safety</h4><p>Run Hive as a sensor, not as production infrastructure. Its SSH, web, MySQL, and Redis endpoints are decoys, not production services.</p><ul><li>Default listeners bind to <code>127.0.0.1</code> for local use.</li><li>Keep the dashboard API private. If the API binds beyond loopback, configure the required bearer token and restrict access to a trusted private network.</li><li>For deliberate network exposure, use a dedicated isolated host with no production credentials or sensitive data.</li><li>Suggested firewall rules are never applied automatically.</li></ul><p class="mb-0">Container deployment uses a local Compose profile, loopback-published ports by default, a persistent data volume, dropped Linux capabilities, and a read-only backend filesystem except for its data volume.</p></div></div></div></div>
+        <div class="container"><div class="row justify-content-center"><div class="col-lg-10"><div class="ethics-card"><h4>Sécurité du déploiement</h4><p>Utilisez Hive comme capteur, pas comme infrastructure de production. Ses points de terminaison SSH, web, MySQL et Redis sont des leurres, pas des services de production.</p><ul><li>Par défaut, les écouteurs se lient à <code>127.0.0.1</code> pour un usage local.</li><li>Gardez l’API du tableau de bord privée. Si elle est liée à une adresse autre que loopback, configurez le jeton Bearer requis et limitez l’accès à un réseau privé de confiance.</li><li>Pour exposer volontairement un capteur sur le réseau, utilisez une machine dédiée et isolée, sans identifiants de production ni données sensibles.</li><li>Les règles pare-feu suggérées ne sont jamais appliquées automatiquement.</li></ul><p class="mb-0">Le profil Docker Compose publie par défaut les ports sur loopback, conserve les données dans un volume, retire des capacités Linux aux conteneurs et rend le système de fichiers du service backend en lecture seule, à l’exception du volume de données.</p></div></div></div></div>
       </section>
     </main>
 
@@ -702,18 +705,18 @@
           <a href="inversehacker.html" class="nav-btn nav-btn-outline" id="prev-project-btn">
             <i class="bi bi-arrow-left"></i>
             <div>
-              <div style="font-size:0.7rem; opacity:0.5; text-transform:uppercase; letter-spacing:0.1em;">Previous project</div>
+              <div style="font-size:0.7rem; opacity:0.5; text-transform:uppercase; letter-spacing:0.1em;">Projet précédent</div>
               <div style="font-size:0.88rem;">InverseHacker</div>
             </div>
           </a>
           <a href="index.html#portfolio" class="nav-btn nav-btn-outline" id="all-projects-btn">
             <i class="bi bi-grid-fill"></i>
-            All projects
+            Tous les projets
           </a>
           <a href="soc.html" class="nav-btn nav-btn-primary" id="next-project-btn">
             <div>
-              <div style="font-size:0.7rem; opacity:0.7; text-transform:uppercase; letter-spacing:0.1em;">Next project</div>
-              <div style="font-size:0.88rem;">SOC Analyst Lab</div>
+              <div style="font-size:0.7rem; opacity:0.7; text-transform:uppercase; letter-spacing:0.1em;">Projet suivant</div>
+              <div style="font-size:0.88rem;">Laboratoire SOC</div>
             </div>
             <i class="bi bi-arrow-right"></i>
           </a>
@@ -730,7 +733,7 @@
               <span class="sitename">Jeanluck Cyber Insights</span>
             </a>
             <p>
-              I document hands-on work across cybersecurity, detection, network engineering, and practical IT training.
+              Je présente mes travaux pratiques en cybersécurité, détection, ingénierie réseau et formation informatique.
             </p>
             <div class="social-links d-flex mt-4">
               <a href="https://github.com/Jeanluck"><i class="bi bi-github"></i></a>
@@ -738,25 +741,25 @@
             </div>
           </div>
           <div class="col-lg-3 col-md-6 footer-links">
-            <h4>Project areas</h4>
+            <h4>Domaines de projet</h4>
             <ul>
-              <li><a href="#">Security testing</a></li>
-              <li><a href="#">Cyber Deception</a></li>
-              <li><a href="#">Malware analysis</a></li>
-              <li><a href="#">Network security</a></li>
-              <li><a href="#">Incident response</a></li>
+              <li><a href="#">Tests de sécurité</a></li>
+              <li><a href="#">Cyberdéception</a></li>
+              <li><a href="#">Analyse de malwares</a></li>
+              <li><a href="#">Sécurité réseau</a></li>
+              <li><a href="#">Réponse aux incidents</a></li>
             </ul>
           </div>
           <div class="col-lg-3 col-md-6 footer-contact text-center text-md-start">
             <h4>Contact</h4>
-            <p>For questions or collaboration, get in touch.</p>
+            <p>Pour toute question ou proposition de collaboration, contactez-moi.</p>
             <p class="mt-4"><strong>Email:</strong> <span>jeanlucndato@gmail.com</span></p>
           </div>
         </div>
       </div>
       <div class="container copyright text-center mt-4">
-        <p>© <span>Copyright</span> <strong class="px-1 sitename">Jeanluck Ndato</strong> <span>All rights reserved</span></p>
-        <div class="credits">Designed &amp; maintained by <a href="https://github.com/JeanluckNdato">INVERSEHACKER</a></div>
+        <p>© <span>Droit d’auteur</span> <strong class="px-1 sitename">Jeanluck Ndato</strong> <span>Tous droits réservés</span></p>
+        <div class="credits">Conçu et maintenu par <a href="https://github.com/JeanluckNdato">INVERSEHACKER</a></div>
       </div>
     </footer>
 
