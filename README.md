@@ -11,8 +11,9 @@ The project brings together network protocol handling, concurrent event delivery
 Run Hive locally, then open the dashboard and try the short walkthrough:
 
 1. Visit **[http://127.0.0.1:5173](http://127.0.0.1:5173)** and select **Decoy website** in the sidebar.
-2. Click an `inversehacker` navigation link. Return to **Event stream** to see an HTTP **link click** event with the destination.
-3. In a second terminal, connect to the SSH decoy and try a few commands:
+2. Use the `inversehacker` navigation or call-to-action links. They scroll smoothly without reloading and publish HTTP **link click** events with the destination.
+3. Submit the inquiry form at the bottom of the decoy page. It shows a simulated confirmation and publishes a **form submit** event; submitted field values are not retained.
+4. In a second terminal, connect to the SSH decoy and try a few commands:
 
    ```sh
    ssh -p 2222 root@127.0.0.1
@@ -59,7 +60,7 @@ If startup reports **address already in use**, another process is using one of H
 - **Protocol-specific sensors:** SSH, HTTP, MySQL, and Redis each produce normalized events from different wire protocols and request shapes.
 - **An event-driven pipeline:** a shared typed event bus enriches events, journals them, and streams them to subscribers without letting a slow dashboard block a sensor handler.
 - **A safe interactive SSH decoy:** commands receive believable canned Linux responses, with a small pretend filesystem and a changing prompt. Submitted commands are captured, but no shell process is started and no host files are read.
-- **Web interaction telemetry:** the inversehacker landing page is served by the HTTP decoy. Same-site link clicks become distinct `link_click` events visible in the dashboard.
+- **Web interaction telemetry:** the inversehacker site is served by the HTTP decoy. Same-site link clicks and inquiry submissions become distinct `link_click` and `form_submit` events visible in the dashboard. The inquiry endpoint returns a simulated confirmation and discards submitted field values.
 - **Real-time operations UI:** the React dashboard combines recent history with a reconnecting WebSocket stream, event search, service filters, and delivery/journal health counters. The decoy website can be previewed inside Hive.
 - **Threat-intelligence outputs:** observed source IPs can produce STIX 2.1 indicators and suggested `iptables`/`ip6tables` commands for review.
 - **Deliberate safety boundaries:** passwords are not recorded by the SSH or MySQL decoys, common secret patterns are redacted, listener input is bounded, and firewall suggestions are not executed.
@@ -96,7 +97,7 @@ flowchart LR
 | Component | Captures | Important limit |
 |---|---|---|
 | SSH decoy | Login usernames and commands from shell or SSH `exec` requests | Fake shell; no commands run. Passwords are discarded. A persistent Ed25519 host key is stored at `data/ssh_host_ed25519`. |
-| HTTP decoy | Method, path, user agent, bounded request body, and inversehacker link clicks | Best-effort text redaction is not a guarantee that all personal or secret data is removed. |
+| HTTP decoy | Method, path, user agent, bounded request body, inversehacker link clicks, and inquiry form submissions | Inquiry form values are discarded; other captured request bodies may still contain sensitive input. Redaction is best effort. |
 | MySQL decoy | Login username from a bounded handshake packet | Returns access denied; does not store the password response or implement SQL sessions. |
 | Redis decoy | Commands from inline and RESP requests | Minimal replies for common commands; not a Redis-compatible database. `AUTH` values and common secret assignments are redacted. |
 | Dashboard/API | Recent events, WebSocket stream, and basic sensor delivery metrics | API has no authentication. Dashboard loads up to 100 historical events and keeps up to 500 in browser memory. |

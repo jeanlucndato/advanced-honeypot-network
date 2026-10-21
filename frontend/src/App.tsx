@@ -162,7 +162,7 @@ function App() {
               <td className="time-cell"><span>{new Date(item.timestamp).toLocaleTimeString()}</span><small>{new Date(item.timestamp).toLocaleDateString()}</small></td>
               <td><span className={`service-pill ${item.service}`}>{item.service}</span></td>
               <td className="source-cell">{item.attacker_ip}{item.attacker_port && <small>:{item.attacker_port}</small>}</td>
-              <td><span className={`event-pill ${item.event_type.includes('exploit') ? 'danger' : item.event_type.includes('auth') ? 'warning' : item.event_type === 'link_click' ? 'interaction' : ''}`}>{item.event_type.replaceAll('_', ' ')}</span></td>
+              <td><span className={`event-pill ${item.event_type.includes('exploit') ? 'danger' : item.event_type.includes('auth') ? 'warning' : ['link_click', 'form_submit'].includes(item.event_type) ? 'interaction' : ''}`}>{item.event_type.replaceAll('_', ' ')}</span></td>
               <td className="identity-cell">{item.username || '—'}</td>
               <td className="payload-cell" title={item.payload}>{item.payload || '—'}</td>
               <td className="mitre-cell">{item.mitre_techniques?.length ? item.mitre_techniques.map((technique) => <code key={technique}>{technique}</code>) : '—'}</td>
@@ -175,7 +175,7 @@ function App() {
       {selectedEvent && <div className="event-detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedEvent(null); }}>
         <section className="event-detail-panel" role="dialog" aria-modal="true" aria-labelledby="event-detail-title">
           <header className="event-detail-header">
-            <div><div className="detail-pills"><span className={`service-pill ${selectedEvent.service}`}>{selectedEvent.service}</span><span className={`event-pill ${selectedEvent.event_type.includes('exploit') ? 'danger' : selectedEvent.event_type.includes('auth') ? 'warning' : selectedEvent.event_type === 'link_click' ? 'interaction' : ''}`}>{selectedEvent.event_type.replaceAll('_', ' ')}</span></div><h2 id="event-detail-title">Captured event</h2><p>{selectedEvent.id}</p></div>
+            <div><div className="detail-pills"><span className={`service-pill ${selectedEvent.service}`}>{selectedEvent.service}</span><span className={`event-pill ${selectedEvent.event_type.includes('exploit') ? 'danger' : selectedEvent.event_type.includes('auth') ? 'warning' : ['link_click', 'form_submit'].includes(selectedEvent.event_type) ? 'interaction' : ''}`}>{selectedEvent.event_type.replaceAll('_', ' ')}</span></div><h2 id="event-detail-title">Captured event</h2><p>{selectedEvent.id}</p></div>
             <button className="detail-close" autoFocus aria-label="Close event details" onClick={() => setSelectedEvent(null)}><X size={18}/></button>
           </header>
           <div className="event-detail-content">

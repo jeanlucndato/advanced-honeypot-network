@@ -32,13 +32,17 @@ func newHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /__hive/click", func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, 4096)
-		var click struct { Target string `json:"target"` }
+		var click struct {
+			Target string `json:"target"`
+		}
 		if err := json.NewDecoder(r.Body).Decode(&click); err != nil || strings.TrimSpace(click.Target) == "" {
 			http.Error(w, "invalid click event", http.StatusBadRequest)
 			return
 		}
 		target := strings.TrimSpace(click.Target)
-		if len(target) > 512 { target = target[:512] }
+		if len(target) > 512 {
+			target = target[:512]
+		}
 		publishHTTPEvent(r, "link_click", sanitize.Redact("LINK CLICK "+target))
 		w.WriteHeader(http.StatusNoContent)
 	})
@@ -50,8 +54,15 @@ func newHandler() http.Handler {
 			return
 		}
 		fields := make([]string, 0, 3)
-		for _, name := range []string{"name", "email", "message"} { if _, ok := submitted[name]; ok { fields = append(fields, name) } }
-		if len(fields) == 0 { http.Error(w, "no supported fields", http.StatusBadRequest); return }
+		for _, name := range []string{"name", "email", "message"} {
+			if _, ok := submitted[name]; ok {
+				fields = append(fields, name)
+			}
+		}
+		if len(fields) == 0 {
+			http.Error(w, "no supported fields", http.StatusBadRequest)
+			return
+		}
 		publishHTTPEvent(r, "form_submit", fmt.Sprintf("Contact form submitted; fields: %s (values not retained)", strings.Join(fields, ", ")))
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusAccepted)
@@ -96,7 +107,9 @@ func newHandler() http.Handler {
 			eventType = "exploit_attempt"
 		}
 
-		if eventType == "link_click" { publishHTTPEvent(r, eventType, payload) } else {
+		if eventType == "link_click" {
+			publishHTTPEvent(r, eventType, payload)
+		} else {
 			event.GlobalBus.Publish(types.Event{AttackerIP: ip, AttackerPort: sourcePort, Service: "http", EventType: eventType, Payload: payload})
 		}
 
@@ -112,7 +125,9 @@ func newHandler() http.Handler {
 
 func publishHTTPEvent(r *http.Request, eventType, payload string) {
 	ip, sourcePort, err := net.SplitHostPort(r.RemoteAddr)
-	if err != nil { ip = r.RemoteAddr }
+	if err != nil {
+		ip = r.RemoteAddr
+	}
 	event.GlobalBus.Publish(types.Event{AttackerIP: ip, AttackerPort: sourcePort, Service: "http", EventType: eventType, Payload: sanitize.Redact(payload)})
 }
 
@@ -163,6 +178,7 @@ const inverseHackerLandingPage = `<!doctype html>
     .campaign{padding:0 0 70px}.campaign-box{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;align-items:center;gap:30px;padding:42px 48px;border:1px solid #34443d;border-radius:13px;background:radial-gradient(ellipse at 90% 20%,#bbef6120,transparent 40%),linear-gradient(120deg,#111d27,#101925)}.campaign-box h2{max-width:650px;margin:12px 0;font-size:clamp(26px,3.8vw,38px);line-height:1.15;letter-spacing:-.045em}.campaign-box p{max-width:600px;margin:0;color:#a2b0c1;font-size:13px;line-height:1.75}.campaign-box .button{white-space:nowrap}
     .contact{padding:20px 0 90px}.contact-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:55px;align-items:start}.contact-copy h2{margin:13px 0;font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.05em}.contact-copy p{color:var(--muted);font-size:14px;line-height:1.8}.contact-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:24px;border:1px solid #29384d;border-radius:11px;background:linear-gradient(145deg,#121d2c,#0d1420)}.contact-form label{display:grid;gap:7px;color:#b1bdcf;font-size:11px}.contact-form label:nth-child(3){grid-column:1/-1}.contact-form input,.contact-form textarea{width:100%;box-sizing:border-box;border:1px solid #304056;border-radius:6px;padding:10px 11px;background:#090f19;color:#edf3f9;font:13px/1.5 inherit}.contact-form textarea{min-height:120px;resize:vertical}.contact-form input:focus,.contact-form textarea:focus{outline:2px solid #5de3d088;border-color:#5de3d0}.contact-submit{justify-self:start;border:0;cursor:pointer}.contact-submit:disabled{opacity:.6;cursor:wait}.form-status{grid-column:1/-1;min-height:20px;margin:0;color:var(--cyan);font-size:12px}.form-status.error{color:#ff9c9c}
     footer{border-top:1px solid #202b3e;padding:28px 0 36px;color:#8290a4;font-size:11px}.footer-row{display:flex;justify-content:space-between;align-items:center;gap:20px}.footer-brand{color:#edf3f9;font-size:14px;font-weight:750}.footer-brand em{color:var(--lime);font-style:normal}.footer-links{display:flex;gap:22px}
+    .contact-form input,.contact-form textarea{font-family:inherit;font-size:13px;line-height:1.5}
     @media(max-width:800px){nav{position:relative}.menu-toggle{display:inline-flex}.navlinks{display:none;position:absolute;top:66px;right:0;z-index:8;min-width:190px;flex-direction:column;align-items:stretch;gap:0;padding:8px;border:1px solid #2c3b50;border-radius:9px;background:#111a28;box-shadow:0 16px 35px #0008}.nav-open .navlinks{display:flex}.navlinks a{padding:10px 12px}.navlinks a:nth-child(2),.navlinks a:nth-child(3){display:block}.hero{padding:64px 0 52px}.hero-grid{grid-template-columns:1fr;gap:22px}.visual{min-height:330px}.orbit{width:270px;height:270px}.core{width:130px;height:130px}.fc-one{right:5%}.fc-two{left:5%}.fc-three{right:0}.proof-grid{grid-template-columns:repeat(2,1fr);row-gap:22px}.proof-item:nth-child(2){border:0}.cards{grid-template-columns:1fr}.card{min-height:0}.campaign-box{grid-template-columns:1fr;padding:30px}.campaign-box .button{justify-self:start}.contact-grid{grid-template-columns:1fr;gap:20px}}
     @media(max-width:500px){.wrap{width:min(100% - 32px,1160px)}.topline .wrap span:last-child{display:none}nav{height:66px}.nav-cta{padding:9px 12px;font-size:11px}.hero{padding-top:52px}h1{font-size:46px}.intro{font-size:15px}.hero-actions{align-items:flex-start;flex-direction:column;gap:15px}.trustline{margin-top:30px}.visual{min-height:285px}.orbit{width:230px;height:230px}.core{width:108px;height:108px;border-radius:28px}.core svg{width:58px;height:58px}.float-card{padding:9px 10px}.fc-one{top:12px}.fc-two{bottom:23px}.fc-three{right:-6px}.proof-grid{padding:20px 0}.proof-item strong{font-size:15px}.proof-item span{font-size:9px}.content{padding:65px 0!important}.campaign{padding-bottom:48px}.contact{padding:12px 0 65px}.contact-form{grid-template-columns:1fr;padding:18px}.contact-form label:nth-child(3){grid-column:auto}.form-status{grid-column:auto}.footer-row{align-items:flex-start;flex-direction:column}.footer-links{gap:15px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important}}

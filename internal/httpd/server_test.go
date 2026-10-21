@@ -19,6 +19,12 @@ func TestDecoyPageContainsNoHostDynamicData(t *testing.T) {
 	if got := decoyPage("/.env"); !strings.Contains(got, "inversehacker") {
 		t.Fatal("unknown paths should return the decoy site")
 	}
+	landing := decoyPage("/")
+	for _, want := range []string{`id="site-navigation"`, `class="menu-toggle"`, `href="#contact"`, `id="contact-form"`, `fetch("/__hive/contact"`, `sendBeacon("/__hive/click"`} {
+		if !strings.Contains(landing, want) {
+			t.Fatalf("landing page is missing working interaction %q", want)
+		}
+	}
 }
 
 func TestHTTPHoneypotPublishesBoundedRequest(t *testing.T) {
@@ -54,14 +60,22 @@ func TestDecoyLinkAndContactInteractionsArePublishedSafely(t *testing.T) {
 	click.RemoteAddr = "192.0.2.10:4321"
 	clickResponse := httptest.NewRecorder()
 	handler.ServeHTTP(clickResponse, click)
-	if clickResponse.Code != http.StatusNoContent { t.Fatalf("click status=%d", clickResponse.Code) }
-	if got := <-sub; got.EventType != "link_click" || !strings.Contains(got.Payload, "#approach") { t.Fatalf("click event=%+v", got) }
+	if clickResponse.Code != http.StatusNoContent {
+		t.Fatalf("click status=%d", clickResponse.Code)
+	}
+	if got := <-sub; got.EventType != "link_click" || !strings.Contains(got.Payload, "#approach") {
+		t.Fatalf("click event=%+v", got)
+	}
 
 	form := httptest.NewRequest(http.MethodPost, "/__hive/contact", strings.NewReader(`{"name":"A Person","email":"person@example.test","message":"private details"}`))
 	form.Header.Set("Content-Type", "application/json")
 	form.RemoteAddr = "192.0.2.10:4321"
 	formResponse := httptest.NewRecorder()
 	handler.ServeHTTP(formResponse, form)
-	if formResponse.Code != http.StatusAccepted { t.Fatalf("form status=%d body=%s", formResponse.Code, formResponse.Body.String()) }
-	if got := <-sub; got.EventType != "form_submit" || strings.Contains(got.Payload, "person@example.test") || strings.Contains(got.Payload, "private details") { t.Fatalf("form event retained submitted data: %+v", got) }
+	if formResponse.Code != http.StatusAccepted {
+		t.Fatalf("form status=%d body=%s", formResponse.Code, formResponse.Body.String())
+	}
+	if got := <-sub; got.EventType != "form_submit" || strings.Contains(got.Payload, "person@example.test") || strings.Contains(got.Payload, "private details") {
+		t.Fatalf("form event retained submitted data: %+v", got)
+	}
 }
