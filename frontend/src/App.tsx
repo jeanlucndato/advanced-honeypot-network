@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Activity, AlertTriangle, ArrowDownToLine, CircleDot, Database, Download, Globe2, Search, Shield, Terminal, Wifi, WifiOff } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownToLine, CircleDot, Database, Download, Globe2, Search, Shield, Terminal, Wifi, WifiOff, X } from 'lucide-react';
 import './App.css';
 
 interface Event {
@@ -21,6 +21,7 @@ function App() {
   const [authRequired, setAuthRequired] = useState(false);
   const [activeView, setActiveView] = useState<'events' | 'website'>('events');
   const [sitePreviewKey, setSitePreviewKey] = useState(0);
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const wsAddress = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:8000/ws/events`;
   const apiAddress = wsAddress.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:').replace(/\/ws\/events(?:\?.*)?$/, '');
 
@@ -79,6 +80,13 @@ function App() {
     }, 250);
     return () => clearTimeout(timer);
   }, [apiAddress, apiToken, filter, query]);
+
+  useEffect(() => {
+    if (!selectedEvent) return;
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setSelectedEvent(null); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [selectedEvent]);
 
   const visibleEvents = useMemo(() => events.filter((item) => {
     const matchesService = filter === 'all' || item.service.toLowerCase() === filter;
@@ -150,7 +158,7 @@ function App() {
             <label className="search-box"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search IP, payload, identity…" aria-label="Search events" /></label>
           </div>
           <div className="table-scroll"><table className="events-table"><thead><tr><th>TIME</th><th>SERVICE</th><th>SOURCE</th><th>ACTIVITY</th><th>IDENTITY</th><th>OBSERVED INPUT</th><th>ATT&amp;CK</th></tr></thead>
-            <tbody>{visibleEvents.length === 0 ? <tr><td colSpan={7}><div className="empty-state"><Terminal size={25} /><strong>{events.length ? 'No matching events' : 'Waiting for activity'}</strong><span>{events.length ? 'Try another service filter or search.' : 'Connect to a honeypot service to see its captured activity here.'}</span></div></td></tr> : visibleEvents.map((item) => <tr key={item.id}>
+            <tbody>{visibleEvents.length === 0 ? <tr><td colSpan={7}><div className="empty-state"><Terminal size={25} /><strong>{events.length ? 'No matching events' : 'Waiting for activity'}</strong><span>{events.length ? 'Try another service filter or search.' : 'Connect to a honeypot service to see its captured activity here.'}</span></div></td></tr> : visibleEvents.map((item) => <tr key={item.id} className="event-row" tabIndex={0} aria-label={`Open details for ${item.service} ${item.event_type} from ${item.attacker_ip}`} onClick={() => setSelectedEvent(item)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedEvent(item); } }}>
               <td className="time-cell"><span>{new Date(item.timestamp).toLocaleTimeString()}</span><small>{new Date(item.timestamp).toLocaleDateString()}</small></td>
               <td><span className={`service-pill ${item.service}`}>{item.service}</span></td>
               <td className="source-cell">{item.attacker_ip}{item.attacker_port && <small>:{item.attacker_port}</small>}</td>
@@ -164,6 +172,20 @@ function App() {
         <div className="safety-note"><Shield size={15} /><span>Honeypot telemetry can contain sensitive, attacker-supplied data. Restrict dashboard access and configure retention before external deployment.</span></div>
         </>}
       </main>
+      {selectedEvent && <div className="event-detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedEvent(null); }}>
+        <section className="event-detail-panel" role="dialog" aria-modal="true" aria-labelledby="event-detail-title">
+          <header className="event-detail-header">
+            <div><div className="detail-pills"><span className={`service-pill ${selectedEvent.service}`}>{selectedEvent.service}</span><span className={`event-pill ${selectedEvent.event_type.includes('exploit') ? 'danger' : selectedEvent.event_type.includes('auth') ? 'warning' : selectedEvent.event_type === 'link_click' ? 'interaction' : ''}`}>{selectedEvent.event_type.replaceAll('_', ' ')}</span></div><h2 id="event-detail-title">Captured event</h2><p>{selectedEvent.id}</p></div>
+            <button className="detail-close" autoFocus aria-label="Close event details" onClick={() => setSelectedEvent(null)}><X size={18}/></button>
+          </header>
+          <div className="event-detail-content">
+            <section className="detail-section"><h3>When it happened</h3><p className="detail-timestamp">{new Date(selectedEvent.timestamp).toLocaleString()}</p></section>
+            <section className="detail-section"><h3>Source and sensor</h3><dl className="detail-grid"><div><dt>Attacker IP</dt><dd>{selectedEvent.attacker_ip}{selectedEvent.attacker_port && <span>:{selectedEvent.attacker_port}</span>}</dd></div><div><dt>Service</dt><dd>{selectedEvent.service}</dd></div><div><dt>Username</dt><dd>{selectedEvent.username || 'Not captured'}</dd></div><div><dt>Sensor ID</dt><dd>{selectedEvent.sensor_id || 'Unknown'}</dd></div></dl></section>
+            <section className="detail-section"><h3>Observed input</h3><pre className="detail-payload">{selectedEvent.payload || 'No payload was captured for this event.'}</pre></section>
+            <section className="detail-section"><h3>MITRE ATT&amp;CK techniques</h3>{selectedEvent.mitre_techniques?.length ? <div className="detail-techniques">{selectedEvent.mitre_techniques.map((technique) => <code key={technique}>{technique}</code>)}</div> : <p className="detail-muted">No techniques were assigned.</p>}</section>
+          </div>
+        </section>
+      </div>}
       {authRequired && <div className="auth-overlay"><form className="auth-card" onSubmit={authenticate}><Shield size={25}/><h2>Dashboard access</h2><p>Enter the HIVE_API_TOKEN configured for this sensor.</p><label>API token<input autoFocus type="password" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} autoComplete="current-password" /></label><button type="submit">Connect to Hive</button></form></div>}
     </div>
   );
