@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -40,4 +41,27 @@ func TestHTTPHoneypotPublishesBoundedRequest(t *testing.T) {
 	default:
 		t.Fatal("request did not publish an event")
 	}
+}
+
+func TestDecoyLinkAndContactInteractionsArePublishedSafely(t *testing.T) {
+	event.InitBus()
+	sub := event.GlobalBus.Subscribe(2)
+	defer event.GlobalBus.Unsubscribe(sub)
+	handler := newHandler()
+
+	click := httptest.NewRequest(http.MethodPost, "/__hive/click", strings.NewReader(`{"target":"/#approach"}`))
+	click.Header.Set("Content-Type", "application/json")
+	click.RemoteAddr = "192.0.2.10:4321"
+	clickResponse := httptest.NewRecorder()
+	handler.ServeHTTP(clickResponse, click)
+	if clickResponse.Code != http.StatusNoContent { t.Fatalf("click status=%d", clickResponse.Code) }
+	if got := <-sub; got.EventType != "link_click" || !strings.Contains(got.Payload, "#approach") { t.Fatalf("click event=%+v", got) }
+
+	form := httptest.NewRequest(http.MethodPost, "/__hive/contact", strings.NewReader(`{"name":"A Person","email":"person@example.test","message":"private details"}`))
+	form.Header.Set("Content-Type", "application/json")
+	form.RemoteAddr = "192.0.2.10:4321"
+	formResponse := httptest.NewRecorder()
+	handler.ServeHTTP(formResponse, form)
+	if formResponse.Code != http.StatusAccepted { t.Fatalf("form status=%d body=%s", formResponse.Code, formResponse.Body.String()) }
+	if got := <-sub; got.EventType != "form_submit" || strings.Contains(got.Payload, "person@example.test") || strings.Contains(got.Payload, "private details") { t.Fatalf("form event retained submitted data: %+v", got) }
 }

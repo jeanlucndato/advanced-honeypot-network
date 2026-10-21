@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -29,6 +30,33 @@ func StartServer(port string) {
 
 func newHandler() http.Handler {
 	mux := http.NewServeMux()
+	mux.HandleFunc("POST /__hive/click", func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 4096)
+		var click struct { Target string `json:"target"` }
+		if err := json.NewDecoder(r.Body).Decode(&click); err != nil || strings.TrimSpace(click.Target) == "" {
+			http.Error(w, "invalid click event", http.StatusBadRequest)
+			return
+		}
+		target := strings.TrimSpace(click.Target)
+		if len(target) > 512 { target = target[:512] }
+		publishHTTPEvent(r, "link_click", sanitize.Redact("LINK CLICK "+target))
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("POST /__hive/contact", func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+		var submitted map[string]json.RawMessage
+		if err := json.NewDecoder(r.Body).Decode(&submitted); err != nil {
+			http.Error(w, "invalid form submission", http.StatusBadRequest)
+			return
+		}
+		fields := make([]string, 0, 3)
+		for _, name := range []string{"name", "email", "message"} { if _, ok := submitted[name]; ok { fields = append(fields, name) } }
+		if len(fields) == 0 { http.Error(w, "no supported fields", http.StatusBadRequest); return }
+		publishHTTPEvent(r, "form_submit", fmt.Sprintf("Contact form submitted; fields: %s (values not retained)", strings.Join(fields, ", ")))
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusAccepted)
+		_, _ = io.WriteString(w, `{"ok":true}`)
+	})
 
 	// Capture All routes
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -68,13 +96,9 @@ func newHandler() http.Handler {
 			eventType = "exploit_attempt"
 		}
 
-		event.GlobalBus.Publish(types.Event{
-			AttackerIP:   ip,
-			AttackerPort: sourcePort,
-			Service:      "http",
-			EventType:    eventType,
-			Payload:      payload,
-		})
+		if eventType == "link_click" { publishHTTPEvent(r, eventType, payload) } else {
+			event.GlobalBus.Publish(types.Event{AttackerIP: ip, AttackerPort: sourcePort, Service: "http", EventType: eventType, Payload: payload})
+		}
 
 		// Always return 200 OK with a fake generic response to keep them engaged
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -84,6 +108,12 @@ func newHandler() http.Handler {
 	})
 
 	return mux
+}
+
+func publishHTTPEvent(r *http.Request, eventType, payload string) {
+	ip, sourcePort, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil { ip = r.RemoteAddr }
+	event.GlobalBus.Publish(types.Event{AttackerIP: ip, AttackerPort: sourcePort, Service: "http", EventType: eventType, Payload: sanitize.Redact(payload)})
 }
 
 func decoyPage(path string) string {
@@ -113,6 +143,7 @@ const inverseHackerLandingPage = `<!doctype html>
     .pulse{display:inline-flex;align-items:center;gap:9px}.pulse i{width:7px;height:7px;border-radius:50%;background:var(--lime);box-shadow:0 0 12px #c3f37788}
     header{position:sticky;top:0;z-index:5;background:#080d19eF;border-bottom:1px solid #1b2638;backdrop-filter:blur(16px)}
     nav{height:76px;display:flex;align-items:center;justify-content:space-between;gap:26px}
+    .menu-toggle{display:none;border:1px solid #344357;border-radius:7px;background:#111b29;color:#eaf1f8;padding:8px 10px;font:inherit;font-size:12px;cursor:pointer}
     .brand{display:flex;align-items:center;gap:11px;font-size:17px;font-weight:750;letter-spacing:-.04em}.brand-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid #43566b;border-radius:10px;color:var(--lime);font-size:19px;background:linear-gradient(145deg,#1b2b3e,#101722)}.brand b{font-weight:750}.brand em{font-style:normal;color:var(--lime)}
     .navlinks{display:flex;align-items:center;gap:30px;color:#bdc7d5;font-size:13px}.navlinks a:hover{color:var(--lime)}
     .nav-cta,.button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:11px 17px;border-radius:7px;background:var(--lime);color:#10180b;font-weight:750;font-size:13px;transition:transform .18s,background .18s}.nav-cta:hover,.button:hover{transform:translateY(-2px);background:#d1fa82}
@@ -129,10 +160,11 @@ const inverseHackerLandingPage = `<!doctype html>
     .proof{border-block:1px solid #1d293b;background:#0b111e}.proof-grid{display:grid;grid-template-columns:repeat(4,1fr);padding:25px 0}.proof-item{text-align:center;border-right:1px solid #263144}.proof-item:last-child{border:0}.proof-item strong{display:block;color:#eaf1f8;font-size:17px}.proof-item span{color:#8492a8;font-size:10px;letter-spacing:.07em;text-transform:uppercase}
     section.content{padding:92px 0}.section-head{max-width:690px;margin:0 auto 42px;text-align:center}.section-head h2,.split h2{margin:13px 0;font-size:clamp(30px,4vw,43px);line-height:1.13;letter-spacing:-.05em}.section-head p,.split p{color:var(--muted);font-size:14px;line-height:1.8}
     .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}.card{min-height:230px;padding:24px;border:1px solid #253248;border-radius:11px;background:linear-gradient(150deg,#121d2d,#0d1421);transition:transform .2s,border-color .2s}.card:hover{transform:translateY(-4px);border-color:#53664f}.card-icon{width:40px;height:40px;display:grid;place-items:center;margin-bottom:22px;border:1px solid #344757;border-radius:10px;background:#15232c;color:var(--cyan);font-size:18px}.card:nth-child(2) .card-icon{color:var(--purple)}.card:nth-child(3) .card-icon{color:var(--lime)}.card h3{margin:0 0 8px;font-size:17px;letter-spacing:-.02em}.card p{margin:0;color:#94a2b6;font-size:12px;line-height:1.75}
-    .campaign{padding:0 0 90px}.campaign-box{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;align-items:center;gap:30px;padding:42px 48px;border:1px solid #34443d;border-radius:13px;background:radial-gradient(ellipse at 90% 20%,#bbef6120,transparent 40%),linear-gradient(120deg,#111d27,#101925)}.campaign-box h2{max-width:650px;margin:12px 0;font-size:clamp(26px,3.8vw,38px);line-height:1.15;letter-spacing:-.045em}.campaign-box p{max-width:600px;margin:0;color:#a2b0c1;font-size:13px;line-height:1.75}.campaign-box .button{white-space:nowrap}
+    .campaign{padding:0 0 70px}.campaign-box{position:relative;overflow:hidden;display:grid;grid-template-columns:1fr auto;align-items:center;gap:30px;padding:42px 48px;border:1px solid #34443d;border-radius:13px;background:radial-gradient(ellipse at 90% 20%,#bbef6120,transparent 40%),linear-gradient(120deg,#111d27,#101925)}.campaign-box h2{max-width:650px;margin:12px 0;font-size:clamp(26px,3.8vw,38px);line-height:1.15;letter-spacing:-.045em}.campaign-box p{max-width:600px;margin:0;color:#a2b0c1;font-size:13px;line-height:1.75}.campaign-box .button{white-space:nowrap}
+    .contact{padding:20px 0 90px}.contact-grid{display:grid;grid-template-columns:.8fr 1.2fr;gap:55px;align-items:start}.contact-copy h2{margin:13px 0;font-size:clamp(28px,4vw,42px);line-height:1.1;letter-spacing:-.05em}.contact-copy p{color:var(--muted);font-size:14px;line-height:1.8}.contact-form{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:24px;border:1px solid #29384d;border-radius:11px;background:linear-gradient(145deg,#121d2c,#0d1420)}.contact-form label{display:grid;gap:7px;color:#b1bdcf;font-size:11px}.contact-form label:nth-child(3){grid-column:1/-1}.contact-form input,.contact-form textarea{width:100%;box-sizing:border-box;border:1px solid #304056;border-radius:6px;padding:10px 11px;background:#090f19;color:#edf3f9;font:13px/1.5 inherit}.contact-form textarea{min-height:120px;resize:vertical}.contact-form input:focus,.contact-form textarea:focus{outline:2px solid #5de3d088;border-color:#5de3d0}.contact-submit{justify-self:start;border:0;cursor:pointer}.contact-submit:disabled{opacity:.6;cursor:wait}.form-status{grid-column:1/-1;min-height:20px;margin:0;color:var(--cyan);font-size:12px}.form-status.error{color:#ff9c9c}
     footer{border-top:1px solid #202b3e;padding:28px 0 36px;color:#8290a4;font-size:11px}.footer-row{display:flex;justify-content:space-between;align-items:center;gap:20px}.footer-brand{color:#edf3f9;font-size:14px;font-weight:750}.footer-brand em{color:var(--lime);font-style:normal}.footer-links{display:flex;gap:22px}
-    @media(max-width:800px){.navlinks{gap:16px}.navlinks a:nth-child(2),.navlinks a:nth-child(3){display:none}.hero{padding:64px 0 52px}.hero-grid{grid-template-columns:1fr;gap:22px}.visual{min-height:330px}.orbit{width:270px;height:270px}.core{width:130px;height:130px}.fc-one{right:5%}.fc-two{left:5%}.fc-three{right:0}.proof-grid{grid-template-columns:repeat(2,1fr);row-gap:22px}.proof-item:nth-child(2){border:0}.cards{grid-template-columns:1fr}.card{min-height:0}.campaign-box{grid-template-columns:1fr;padding:30px}.campaign-box .button{justify-self:start}}
-    @media(max-width:500px){.wrap{width:min(100% - 32px,1160px)}.topline .wrap span:last-child{display:none}nav{height:66px}.navlinks{display:none}.nav-cta{padding:9px 12px;font-size:11px}.hero{padding-top:52px}h1{font-size:46px}.intro{font-size:15px}.hero-actions{align-items:flex-start;flex-direction:column;gap:15px}.trustline{margin-top:30px}.visual{min-height:285px}.orbit{width:230px;height:230px}.core{width:108px;height:108px;border-radius:28px}.core svg{width:58px;height:58px}.float-card{padding:9px 10px}.fc-one{top:12px}.fc-two{bottom:23px}.fc-three{right:-6px}.proof-grid{padding:20px 0}.proof-item strong{font-size:15px}.proof-item span{font-size:9px}.content{padding:65px 0!important}.campaign{padding-bottom:65px}.footer-row{align-items:flex-start;flex-direction:column}.footer-links{gap:15px}}
+    @media(max-width:800px){nav{position:relative}.menu-toggle{display:inline-flex}.navlinks{display:none;position:absolute;top:66px;right:0;z-index:8;min-width:190px;flex-direction:column;align-items:stretch;gap:0;padding:8px;border:1px solid #2c3b50;border-radius:9px;background:#111a28;box-shadow:0 16px 35px #0008}.nav-open .navlinks{display:flex}.navlinks a{padding:10px 12px}.navlinks a:nth-child(2),.navlinks a:nth-child(3){display:block}.hero{padding:64px 0 52px}.hero-grid{grid-template-columns:1fr;gap:22px}.visual{min-height:330px}.orbit{width:270px;height:270px}.core{width:130px;height:130px}.fc-one{right:5%}.fc-two{left:5%}.fc-three{right:0}.proof-grid{grid-template-columns:repeat(2,1fr);row-gap:22px}.proof-item:nth-child(2){border:0}.cards{grid-template-columns:1fr}.card{min-height:0}.campaign-box{grid-template-columns:1fr;padding:30px}.campaign-box .button{justify-self:start}.contact-grid{grid-template-columns:1fr;gap:20px}}
+    @media(max-width:500px){.wrap{width:min(100% - 32px,1160px)}.topline .wrap span:last-child{display:none}nav{height:66px}.nav-cta{padding:9px 12px;font-size:11px}.hero{padding-top:52px}h1{font-size:46px}.intro{font-size:15px}.hero-actions{align-items:flex-start;flex-direction:column;gap:15px}.trustline{margin-top:30px}.visual{min-height:285px}.orbit{width:230px;height:230px}.core{width:108px;height:108px;border-radius:28px}.core svg{width:58px;height:58px}.float-card{padding:9px 10px}.fc-one{top:12px}.fc-two{bottom:23px}.fc-three{right:-6px}.proof-grid{padding:20px 0}.proof-item strong{font-size:15px}.proof-item span{font-size:9px}.content{padding:65px 0!important}.campaign{padding-bottom:48px}.contact{padding:12px 0 65px}.contact-form{grid-template-columns:1fr;padding:18px}.contact-form label:nth-child(3){grid-column:auto}.form-status{grid-column:auto}.footer-row{align-items:flex-start;flex-direction:column}.footer-links{gap:15px}}
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important}}
   </style>
 </head>
@@ -140,7 +172,8 @@ const inverseHackerLandingPage = `<!doctype html>
   <div class="topline"><div class="wrap"><span class="pulse"><i></i> INDEPENDENT SECURITY RESEARCH &amp; DEFENSE</span><span>BUILT FOR THE REAL WORLD · EST. 2018</span></div></div>
   <header><nav class="wrap" aria-label="Main navigation">
     <a class="brand" href="#top" aria-label="inversehacker home"><span class="brand-mark">↗</span><span>inverse<em>hacker</em></span></a>
-    <div class="navlinks"><a href="#approach">Our approach</a><a href="#expertise">Expertise</a><a href="#campaign">Research</a></div>
+    <div class="navlinks" id="site-navigation"><a href="#approach">Our approach</a><a href="#expertise">Expertise</a><a href="#campaign">Research</a><a href="#contact">Contact</a></div>
+    <button class="menu-toggle" type="button" aria-controls="site-navigation" aria-expanded="false">Menu</button>
     <a class="nav-cta" href="#campaign">Explore our work <span aria-hidden="true">↗</span></a>
   </nav></header>
   <main id="top">
@@ -167,18 +200,45 @@ const inverseHackerLandingPage = `<!doctype html>
         <article class="card"><div class="card-icon" aria-hidden="true">⌘</div><h3>Make defense measurable</h3><p>Turn findings into a focused plan, validate the fixes, and give leaders a clearer view of risk.</p></article>
       </div>
     </div></section>
-    <section class="campaign" id="campaign"><div class="wrap"><div class="campaign-box"><div><div class="eyebrow">The inversehacker field notes</div><h2>Curiosity is a security capability.</h2><p>Explore ideas from the people who study how systems fail — and help teams make them harder to break.</p></div><a class="button" href="#top">Explore the approach <span aria-hidden="true">→</span></a></div></div></section>
+    <section class="campaign" id="campaign"><div class="wrap"><div class="campaign-box"><div><div class="eyebrow">The inversehacker field notes</div><h2>Curiosity is a security capability.</h2><p>Explore ideas from the people who study how systems fail — and help teams make them harder to break.</p></div><a class="button" href="#contact">Start a conversation <span aria-hidden="true">→</span></a></div></div></section>
+    <section class="contact" id="contact"><div class="wrap contact-grid"><div class="contact-copy"><div class="eyebrow">Make the next move</div><h2>Tell us what you’re working on.</h2><p>Share a little context and the inversehacker team will follow up with a practical next step.</p></div><form class="contact-form" id="contact-form"><label>Name<input name="name" autocomplete="name" required maxlength="120" placeholder="Your name"></label><label>Email<input name="email" type="email" autocomplete="email" required maxlength="254" placeholder="you@example.com"></label><label>What would you like to discuss?<textarea name="message" required maxlength="2000" placeholder="A few details about your security goals..."></textarea></label><button class="button contact-submit" type="submit">Send inquiry <span aria-hidden="true">→</span></button><p class="form-status" aria-live="polite"></p></form></div></section>
   </main>
   <footer><div class="wrap footer-row"><a class="footer-brand" href="#top">inverse<em>hacker</em></a><span>Independent thinking. Resilient systems. Better security.</span><div class="footer-links"><a href="#approach">Approach</a><a href="#expertise">Expertise</a><a href="#campaign">Research</a></div></div></footer>
 <script>
+  const nav = document.querySelector("header nav");
+  const menu = document.querySelector(".menu-toggle");
+  menu.addEventListener("click", function () {
+    const expanded = menu.getAttribute("aria-expanded") === "true";
+    menu.setAttribute("aria-expanded", String(!expanded));
+    nav.classList.toggle("nav-open", !expanded);
+  });
   document.addEventListener("click", function (event) {
     const link = event.target instanceof Element ? event.target.closest("a") : null;
     if (!link || link.origin !== location.origin) return;
     const destination = new URL(link.href);
-    destination.searchParams.set("__hive_click", Date.now() + "-" + Math.random().toString(36).slice(2));
-    destination.searchParams.set("__hive_target", destination.pathname + destination.hash);
-    link.href = destination.href;
+    navigator.sendBeacon("/__hive/click", new Blob([JSON.stringify({target: destination.pathname + destination.search + destination.hash})], {type:"application/json"}));
+    nav.classList.remove("nav-open");
+    menu.setAttribute("aria-expanded", "false");
   }, true);
+  document.querySelector("#contact-form").addEventListener("submit", async function (event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector("button[type=submit]");
+    const status = form.querySelector(".form-status");
+    button.disabled = true;
+    status.classList.remove("error");
+    status.textContent = "Sending your inquiry…";
+    try {
+      const values = Object.fromEntries(new FormData(form).entries());
+      const response = await fetch("/__hive/contact", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(values)});
+      if (!response.ok) throw new Error("Request failed");
+      form.reset();
+      status.textContent = "Thanks — your inquiry has been received.";
+    } catch (_) {
+      status.classList.add("error");
+      status.textContent = "We could not send that just now. Please try again.";
+    } finally { button.disabled = false; }
+  });
 </script>
 </body>
 </html>`
