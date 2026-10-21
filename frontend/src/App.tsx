@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Activity, AlertTriangle, ArrowDownToLine, CircleDot, Database, Globe2, Search, Shield, Terminal, Wifi, WifiOff } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowDownToLine, CircleDot, Database, Download, Globe2, Search, Shield, Terminal, Wifi, WifiOff } from 'lucide-react';
 import './App.css';
 
 interface Event {
@@ -26,8 +26,9 @@ function App() {
     let retryDelay = 1000;
     const wsAddress = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:8000/ws/events`;
     const apiAddress = wsAddress.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:').replace(/\/ws\/events(?:\?.*)?$/, '');
+    const headers = import.meta.env.VITE_HIVE_API_TOKEN ? { Authorization: `Bearer ${import.meta.env.VITE_HIVE_API_TOKEN}` } : undefined;
 
-    fetch(`${apiAddress}/api/events?limit=100`).then((response) => response.ok ? response.json() : []).then((items: Event[]) => {
+    fetch(`${apiAddress}/api/events?limit=100`, { headers }).then((response) => response.ok ? response.json() : []).then((items: Event[]) => {
       if (!stopped && Array.isArray(items)) setEvents((current) => {
         const merged = new Map<string, Event>();
         for (const item of items) merged.set(item.id, item);
@@ -35,7 +36,7 @@ function App() {
         return [...merged.values()].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp)).slice(0, 500);
       });
     }).catch(() => undefined);
-    const pollMetrics = () => fetch(`${apiAddress}/api/metrics`).then((r) => r.ok ? r.json() : null).then((data) => {
+    const pollMetrics = () => fetch(`${apiAddress}/api/metrics`, { headers }).then((r) => r.ok ? r.json() : null).then((data) => {
       if (!stopped && data) {
         setDropped(Number(data.dropped_events ?? 0));
         setJournalErrors(Number(data.journal_errors ?? 0));
@@ -76,6 +77,12 @@ function App() {
   const uniqueSources = new Set(events.map((item) => item.attacker_ip)).size;
   const serviceCount = (service: string) => service === 'all' ? events.length : events.filter((item) => item.service.toLowerCase() === service).length;
   const siteUrl = import.meta.env.VITE_HIVE_SITE_URL ?? `${location.protocol}//${location.hostname}:8080/`;
+  const exportEvents = () => {
+    const csvCell = (value: string) => `"${value.replaceAll('"', '""')}"`;
+    const rows = [['timestamp','service','attacker_ip','attacker_port','event_type','username','payload','mitre_techniques'], ...visibleEvents.map((e) => [e.timestamp,e.service,e.attacker_ip,e.attacker_port ?? '',e.event_type,e.username ?? '',e.payload,(e.mitre_techniques ?? []).join(';')])];
+    const blob = new Blob([rows.map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'hive-events.csv'; link.click(); URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="app-shell">
@@ -114,7 +121,7 @@ function App() {
         </section>
 
         <section className="stream-card">
-          <div className="stream-heading"><div><h2>Captured events</h2><p>Newest first · payloads are untrusted input</p></div><span className="event-count">{visibleEvents.length} EVENTS</span></div>
+          <div className="stream-heading"><div><h2>Captured events</h2><p>Newest first · payloads are untrusted input</p></div><div className="stream-actions"><button className="filter-button" onClick={exportEvents} disabled={!visibleEvents.length}><Download size={14}/> Export CSV</button><span className="event-count">{visibleEvents.length} EVENTS</span></div></div>
           <div className="toolbar">
             <div className="filters" role="group" aria-label="Filter events by service">
               {services.map((service) => <button key={service} className={filter === service ? 'filter-button selected' : 'filter-button'} onClick={() => setFilter(service)}>{service === 'all' ? 'All services' : service.toUpperCase()}<span>{serviceCount(service)}</span></button>)}

@@ -29,6 +29,15 @@ func main() {
 	if err := event.GlobalBus.ConfigureJournal(eventLog); err != nil {
 		log.Fatalf("could not open event journal %q: %v", eventLog, err)
 	}
+	if days := os.Getenv("HIVE_RETENTION_DAYS"); days != "" {
+		var retentionDays int
+		if _, err := fmt.Sscanf(days, "%d", &retentionDays); err != nil || retentionDays < 1 {
+			log.Fatalf("HIVE_RETENTION_DAYS must be a positive number")
+		}
+		if err := event.GlobalBus.ApplyRetention(retentionDays); err != nil {
+			log.Fatalf("could not apply event retention: %v", err)
+		}
+	}
 	event.GlobalBus.SetEnricher(mitre.Enrich)
 
 	// Démarrer les moteurs d'intelligence (en tâche de fond)

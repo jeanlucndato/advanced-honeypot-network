@@ -1,0 +1,47 @@
+services:
+  hive:
+    build:
+      context: .
+    environment:
+      HIVE_API_TOKEN: ${HIVE_API_TOKEN:?Set HIVE_API_TOKEN in your environment}
+      HIVE_API_ADDR: 0.0.0.0:8000
+      HIVE_SSH_ADDR: 0.0.0.0:2222
+      HIVE_HTTP_ADDR: 0.0.0.0:8080
+      HIVE_MYSQL_ADDR: 0.0.0.0:3306
+      HIVE_REDIS_ADDR: 0.0.0.0:6379
+      HIVE_RETENTION_DAYS: ${HIVE_RETENTION_DAYS:-30}
+      HIVE_EVENT_LOG: /app/data/events.jsonl
+    ports:
+      - "127.0.0.1:2222:2222"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:3306:3306"
+      - "127.0.0.1:6379:6379"
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - hive-data:/app/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./frontend
+      args:
+        VITE_HIVE_API_TOKEN: ${HIVE_API_TOKEN:?Set HIVE_API_TOKEN in your environment}
+    ports:
+      - "127.0.0.1:5173:80"
+    depends_on: [hive]
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+
+volumes:
+  hive-data:

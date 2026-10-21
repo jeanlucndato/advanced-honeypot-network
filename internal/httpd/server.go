@@ -16,6 +16,18 @@ import (
 )
 
 func StartServer(port string) {
+	fmt.Printf("🕸️  HTTP Honeypot active on port %s...\n", port)
+	addr := "127.0.0.1:" + port
+	if configured := os.Getenv("HIVE_HTTP_ADDR"); configured != "" {
+		addr = configured
+	}
+	server := &http.Server{Addr: addr, Handler: newHandler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
+	if err := server.ListenAndServe(); err != nil {
+		log.Fatalf("HTTP server failed: %v", err)
+	}
+}
+
+func newHandler() http.Handler {
 	mux := http.NewServeMux()
 
 	// Capture All routes
@@ -71,15 +83,7 @@ func StartServer(port string) {
 		_, _ = io.WriteString(w, decoyPage(r.URL.Path))
 	})
 
-	fmt.Printf("🕸️  HTTP Honeypot active on port %s...\n", port)
-	addr := "127.0.0.1:" + port
-	if configured := os.Getenv("HIVE_HTTP_ADDR"); configured != "" {
-		addr = configured
-	}
-	server := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, WriteTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalf("HTTP server failed: %v", err)
-	}
+	return mux
 }
 
 func decoyPage(path string) string {

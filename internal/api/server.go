@@ -36,6 +36,22 @@ func StartServer(port string) {
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 	}))
+	// A configured token protects both HTTP APIs and the live event stream.
+	if token := strings.TrimSpace(os.Getenv("HIVE_API_TOKEN")); token != "" {
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				supplied := req.Header.Get("Authorization")
+				if req.URL.Path == "/ws/events" && supplied == "" {
+					supplied = "Bearer " + req.URL.Query().Get("token")
+				}
+				if supplied != "Bearer "+token {
+					http.Error(w, "unauthorized", http.StatusUnauthorized)
+					return
+				}
+				next.ServeHTTP(w, req)
+			})
+		})
+	}
 
 	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -56,6 +72,25 @@ func StartServer(port string) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(event.GlobalBus.Recent(limit))
+	})
+	r.Get("/api/search", func(w http.ResponseWriter, r *http.Request) {
+		limit, offset := 100, 0
+		if n, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && n > 0 {
+			limit = n
+		}
+		if limit > 500 {
+			limit = 500
+		}
+		if n, err := strconv.Atoi(r.URL.Query().Get("offset")); err == nil && n > 0 {
+			offset = n
+		}
+		items, total, err := event.GlobalBus.Search(r.URL.Query().Get("q"), r.URL.Query().Get("service"), limit, offset)
+		if err != nil {
+			http.Error(w, "event search failed", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"events": items, "total": total, "limit": limit, "offset": offset})
 	})
 	r.Get("/api/metrics", func(w http.ResponseWriter, r *http.Request) {
 		clients, dropped, journalErrors := event.GlobalBus.Stats()

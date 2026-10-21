@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -113,6 +114,128 @@ func (eb *EventBus) ConfigureJournal(path string) error {
 		return err
 	}
 	eb.journal, eb.journalPath, eb.journalSize = f, path, info.Size()
+	return nil
+}
+
+// Search scans the active and rotated JSONL journal, newest first. It returns
+// a page and the total number of matching events.
+func (eb *EventBus) Search(query, service string, limit, offset int) ([]types.Event, int, error) {
+	query, service = strings.ToLower(query), strings.ToLower(service)
+	paths := []string{}
+	eb.mu.RLock()
+	base := eb.journalPath
+	eb.mu.RUnlock()
+	if base == "" {
+		return eb.Recent(limit), len(eb.history), nil
+	}
+	paths = append(paths, base+".1", base)
+	matches := make([]types.Event, 0)
+	for _, p := range paths {
+		f, err := os.Open(p)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return nil, 0, err
+		}
+		s := bufio.NewScanner(f)
+		s.Buffer(make([]byte, 64<<10), 1<<20)
+		for s.Scan() {
+			var e types.Event
+			if json.Unmarshal(s.Bytes(), &e) != nil {
+				continue
+			}
+			if service != "" && !strings.EqualFold(e.Service, service) {
+				continue
+			}
+			if query != "" && !strings.Contains(strings.ToLower(e.AttackerIP+" "+e.Service+" "+e.EventType+" "+e.Username+" "+e.Payload), query) {
+				continue
+			}
+			matches = append(matches, e)
+		}
+		err = s.Err()
+		_ = f.Close()
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+	// Journal files are chronological; reverse for the operator view.
+	for i, j := 0, len(matches)-1; i < j; i, j = i+1, j-1 {
+		matches[i], matches[j] = matches[j], matches[i]
+	}
+	total := len(matches)
+	if offset > total {
+		offset = total
+	}
+	end := offset + limit
+	if end > total {
+		end = total
+	}
+	return matches[offset:end], total, nil
+}
+
+// ApplyRetention removes events older than days from both journal files.
+func (eb *EventBus) ApplyRetention(days int) error {
+	if days <= 0 {
+		return nil
+	}
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
+	if eb.journal == nil || eb.journalPath == "" {
+		return nil
+	}
+	if err := eb.journal.Close(); err != nil {
+		eb.journal = nil
+		return err
+	}
+	eb.journal = nil
+	cutoff := time.Now().AddDate(0, 0, -days)
+	for _, p := range []string{eb.journalPath + ".1", eb.journalPath} {
+		f, err := os.Open(p)
+		if os.IsNotExist(err) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		s := bufio.NewScanner(f)
+		s.Buffer(make([]byte, 64<<10), 1<<20)
+		kept := make([][]byte, 0)
+		for s.Scan() {
+			var e types.Event
+			if json.Unmarshal(s.Bytes(), &e) == nil && !e.Timestamp.Before(cutoff) {
+				kept = append(kept, append([]byte(nil), s.Bytes()...))
+			}
+		}
+		err = s.Err()
+		_ = f.Close()
+		if err != nil {
+			return err
+		}
+		out, err := os.OpenFile(p, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
+		if err != nil {
+			return err
+		}
+		for _, line := range kept {
+			if _, err = out.Write(append(line, '\n')); err != nil {
+				_ = out.Close()
+				return err
+			}
+		}
+		if err = out.Close(); err != nil {
+			return err
+		}
+	}
+	f, err := os.OpenFile(eb.journalPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		return err
+	}
+	info, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return err
+	}
+	eb.journal, eb.journalSize = f, info.Size()
 	return nil
 }
 
