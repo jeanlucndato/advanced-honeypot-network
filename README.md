@@ -1,12 +1,35 @@
 # Hive — Interactive Honeypot Network
 
-**Hive is a small, event-driven security lab for observing how automated scanners and hands-on intruders interact with decoy services.** Four Go sensors (SSH, HTTP, MySQL, and Redis) feed a live React dashboard. A visit to the `inversehacker` decoy site, an SSH login attempt, or a command entered into the simulated shell becomes a structured event that can be inspected in real time.
+**Hive is a security engineering portfolio project that turns activity against decoy services into searchable, live telemetry.** Four Go sensors (SSH, HTTP, MySQL, and Redis) feed a React and TypeScript operator dashboard. Website interactions, protocol probes, and simulated SSH commands become structured events that can be reviewed as they happen.
 
-The project brings together network protocol handling, concurrent event delivery, input sanitization, persistent local telemetry, WebSocket streaming, and a responsive operator interface.
+It demonstrates end-to-end work across network protocol handling, concurrent event delivery, input sanitization, journaled storage, API and WebSocket design, containerized deployment, and an operator-focused interface.
+
+**Stack:** Go · React · TypeScript · WebSockets · TCP/IP · JSONL · Docker Compose
 
 > **Run Hive as a sensor, not as infrastructure.** Its SSH, web, MySQL, and Redis services are decoys, not production servers. Keep the dashboard API private. For any network exposure, use a dedicated, isolated host that contains no production credentials or sensitive data. The fake SSH shell never runs commands on the host, and suggested firewall rules are never applied automatically.
 
 ## See it in action
+
+### Decoy website
+
+The inversehacker site is served by the HTTP sensor. Its responsive navigation works on mobile, link clicks are captured without reloading the page, and the inquiry form returns a simulated confirmation while recording only which fields were submitted.
+
+<p align="center">
+  <img src="img/Decoy%20website%20landing%20page.png" alt="Inversehacker decoy site landing page" width="100%">
+</p>
+
+### Operator dashboard
+
+The dashboard streams sensor events, searches retained journal history, surfaces delivery and storage health, and opens each event in a detailed view. The embedded site preview keeps decoy interactions connected to the same live feed.
+
+<p align="center">
+  <img src="img/Hive%20dashboard.png" alt="Hive live event dashboard with filters, search, and event telemetry" width="100%">
+</p>
+<p align="center">
+  <img src="img/Hive%20Decoy%20website.png" alt="Hive dashboard with the inversehacker decoy site open in its preview" width="100%">
+</p>
+
+### Try the workflow
 
 Run Hive locally, then open the dashboard and try the short walkthrough:
 
@@ -36,6 +59,16 @@ mysql --protocol=TCP -h 127.0.0.1 -P 3306 -u demo
 
 Hive’s dashboard is at **127.0.0.1:5173**, its inversehacker decoy site is at **127.0.0.1:8080**, and the local health endpoint is **127.0.0.1:8000/api/health**.
 
+## Engineering highlights
+
+- **Protocol and service design:** separate SSH, HTTP, MySQL handshake, and Redis RESP sensors normalize different wire interactions into a shared event model.
+- **Concurrency and delivery:** a typed event bus enriches, journals, retains, and fans out events through bounded subscriber queues so slow clients do not stall sensor handlers.
+- **Full-stack event flow:** the React dashboard merges historical search results with a reconnecting WebSocket stream; event selection opens a keyboard-accessible detail panel.
+- **Safe deception:** SSH input is answered by a fake shell with no host command execution. Credential redaction, request bounds, private-by-default binds, and manual-only firewall suggestions constrain the lab.
+- **Operational readiness:** rotating JSONL history, retention controls, health metrics, bearer-token API protection for non-loopback binds, and a hardened local Compose profile support repeatable operation.
+- **Threat-intelligence workflow:** normalized source IPs can be exported as STIX 2.1 indicators and reviewed firewall suggestions.
+- **Testable behavior:** Go tests cover journal search and retention, API token checks, and representative HTTP, SSH, MySQL, and Redis parsing or interaction paths.
+
 ## Quick start
 
 ### Requirements
@@ -54,16 +87,6 @@ From the repository root:
 The launcher installs dashboard dependencies if needed and starts the backend and Vite development server. Keep the terminal open while using Hive. Press **Ctrl+C** to stop. By default, all five listeners bind to `127.0.0.1`, keeping the decoys and dashboard on this computer.
 
 If startup reports **address already in use**, another process is using one of Hive’s ports. Close that process or configure a different port using the environment variables below.
-
-## Why this project is interesting
-
-- **Protocol-specific sensors:** SSH, HTTP, MySQL, and Redis each produce normalized events from different wire protocols and request shapes.
-- **An event-driven pipeline:** a shared typed event bus enriches events, journals them, and streams them to subscribers without letting a slow dashboard block a sensor handler.
-- **A safe interactive SSH decoy:** commands receive believable canned Linux responses, with a small pretend filesystem and a changing prompt. Submitted commands are captured, but no shell process is started and no host files are read.
-- **Web interaction telemetry:** the inversehacker site is served by the HTTP decoy. Same-site link clicks and inquiry submissions become distinct `link_click` and `form_submit` events visible in the dashboard. The inquiry endpoint returns a simulated confirmation and discards submitted field values.
-- **Real-time operations UI:** the React dashboard combines recent history with a reconnecting WebSocket stream, event search, service filters, and delivery/journal health counters. The decoy website can be previewed inside Hive.
-- **Threat-intelligence outputs:** observed source IPs can produce STIX 2.1 indicators and suggested `iptables`/`ip6tables` commands for review.
-- **Deliberate safety boundaries:** passwords are not recorded by the SSH or MySQL decoys, common secret patterns are redacted, listener input is bounded, and firewall suggestions are not executed.
 
 ## Architecture
 
@@ -89,7 +112,7 @@ flowchart LR
 
 1. A sensor observes an interaction and publishes a typed event with source address, service, event type, timestamp, and sanitized payload.
 2. The event bus assigns an ID and sensor ID, applies heuristic MITRE ATT&CK tags, retains a recent in-memory window, appends to the JSONL journal, and fans out to bounded subscriber queues.
-3. The dashboard loads recent events through the API, receives new events over WebSocket, and reconnects with backoff if the connection drops.
+3. The dashboard searches retained journal events through the API, receives new events over WebSocket, and reconnects with backoff if the connection drops.
 4. The threat-intelligence subscriber deduplicates valid IP addresses and writes suggested firewall rules and STIX indicators for an operator to inspect.
 
 ## Components and boundaries
@@ -100,7 +123,7 @@ flowchart LR
 | HTTP decoy | Method, path, user agent, bounded request body, inversehacker link clicks, and inquiry form submissions | Inquiry form values are discarded; other captured request bodies may still contain sensitive input. Redaction is best effort. |
 | MySQL decoy | Login username from a bounded handshake packet | Returns access denied; does not store the password response or implement SQL sessions. |
 | Redis decoy | Commands from inline and RESP requests | Minimal replies for common commands; not a Redis-compatible database. `AUTH` values and common secret assignments are redacted. |
-| Dashboard/API | Recent events, WebSocket stream, and basic sensor delivery metrics | API has no authentication. Dashboard loads up to 100 historical events and keeps up to 500 in browser memory. |
+| Dashboard/API | Searchable retained events, WebSocket stream, and sensor delivery metrics | API and WebSocket require a bearer token when bound beyond loopback. Dashboard keeps up to 500 events in browser memory. |
 | Threat intelligence | Valid source IPs and service names | ATT&CK tags are heuristics; IP indicators are investigative leads, not proof of malicious activity. |
 
 Captured telemetry may still contain sensitive attacker-supplied data. Review retention, access, and legal requirements before collecting data beyond a local lab.
@@ -129,7 +152,7 @@ Set environment variables before launching the backend. The local defaults keep 
 | `VITE_WS_URL` | Derived from dashboard host | Optional WebSocket URL for a remote dashboard |
 | `VITE_HIVE_SITE_URL` | `http(s)://<dashboard-host>:8080/` | Optional URL used by the dashboard’s decoy-site preview |
 
-To deliberately expose a decoy on a sensor host, set only the needed `HIVE_*_ADDR` to a specific interface address or `0.0.0.0:<port>`, then configure the host firewall. Do not expose the unauthenticated dashboard API directly to an untrusted network. For a remote dashboard, keep access on a trusted private network and protect it with an authenticated proxy.
+To deliberately expose a decoy on a sensor host, set only the needed `HIVE_*_ADDR` to a specific interface address or `0.0.0.0:<port>`, then configure the host firewall. When binding the API beyond loopback, configure `HIVE_API_TOKEN`; for a remote dashboard, keep access on a trusted private network and use an authenticated proxy.
 
 ## API
 
@@ -140,6 +163,8 @@ To deliberately expose a decoy on a sensor host, set only the needed `HIVE_*_ADD
 | `GET /api/search?q=...&service=ssh&limit=100&offset=0` | Search the active and rotated JSONL journal, newest first; maximum page size 500 |
 | `GET /api/metrics` | Subscriber count, dropped deliveries, and journal errors |
 | `GET /ws/events` | Live event stream |
+| `POST /__hive/click` | Record a same-site link destination from the decoy website |
+| `POST /__hive/contact` | Return a simulated form confirmation and record field names; submitted values are discarded |
 
 The journal is local JSONL rather than an indexed database. It rotates at 64 MiB and keeps one backup. Search scans those bounded journal files; large captures will benefit from a future indexed database. The dashboard searches the journal and exports the current filtered results to CSV. A browser can miss live events if its subscriber queue fills; dropped deliveries and journal write errors appear in the dashboard and `/api/metrics`.
 
@@ -184,7 +209,7 @@ npm run lint
 
 ## Scope and next steps
 
-Hive is a development-stage project and a practical security engineering lab, not a turnkey production SOC platform. It does not currently include an authenticated API, a durable indexed event database, GeoIP lookup, complete protocol implementations, or automatic firewall management. Strong next steps include protocol-level integration tests, containerized deployment profiles, historical event search, and authenticated multi-sensor administration.
+Hive is a development-stage security lab, not a turnkey production SOC platform. The event journal is bounded rotating JSONL rather than an indexed database, ATT&CK mappings are heuristic, GeoIP enrichment is not included, and protocol implementations are intentionally limited to decoy behavior. Firewall output is advisory and is never applied automatically. Natural next steps include an indexed store for larger captures, richer sensor enrollment and administration, and configurable threat-intelligence enrichment.
 
 ## License
 
