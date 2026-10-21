@@ -21,6 +21,7 @@ import (
 
 func StartServer(port string) {
 	r := chi.NewRouter()
+	token := strings.TrimSpace(os.Getenv("HIVE_API_TOKEN"))
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
@@ -38,24 +39,8 @@ func StartServer(port string) {
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 	}))
 	// A configured token protects both HTTP APIs and the live event stream.
-	if token := strings.TrimSpace(os.Getenv("HIVE_API_TOKEN")); token != "" {
-		r.Use(func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-				supplied := req.Header.Get("Authorization") == "Bearer "+token
-				if req.URL.Path == "/ws/events" {
-					for _, protocol := range websocketProtocols(req.Header.Get("Sec-WebSocket-Protocol")) {
-						if protocol == "hive-auth."+token {
-							supplied = true
-						}
-					}
-				}
-				if !supplied {
-					http.Error(w, "unauthorized", http.StatusUnauthorized)
-					return
-				}
-				next.ServeHTTP(w, req)
-			})
-		})
+	if token != "" {
+		r.Use(tokenAuth(token))
 	}
 
 	r.Get("/api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +95,7 @@ func StartServer(port string) {
 	if addr == "" {
 		addr = "127.0.0.1:" + port
 	}
-	if host, _, splitErr := net.SplitHostPort(addr); splitErr == nil && os.Getenv("HIVE_API_TOKEN") == "" {
+	if host, _, splitErr := net.SplitHostPort(addr); splitErr == nil && token == "" {
 		ip := net.ParseIP(host)
 		if host == "0.0.0.0" || host == "::" || ip == nil || !ip.IsLoopback() {
 			log.Fatal("HIVE_API_TOKEN is required when HIVE_API_ADDR is not loopback")
@@ -131,6 +116,26 @@ func websocketProtocols(value string) []string {
 	return parts
 }
 
+func tokenAuth(token string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			supplied := req.Header.Get("Authorization") == "Bearer "+token
+			if req.URL.Path == "/ws/events" {
+				for _, protocol := range websocketProtocols(req.Header.Get("Sec-WebSocket-Protocol")) {
+					if protocol == "hive-auth."+token {
+						supplied = true
+					}
+				}
+			}
+			if !supplied {
+				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				return
+			}
+			next.ServeHTTP(w, req)
+		})
+	}
+}
+
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	allowed := []string{"localhost:5173", "127.0.0.1:5173"}
 	if configured := os.Getenv("HIVE_ALLOWED_ORIGINS"); configured != "" {
@@ -140,7 +145,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	protocols := []string{}
-	if token := os.Getenv("HIVE_API_TOKEN"); token != "" {
+	if token := strings.TrimSpace(os.Getenv("HIVE_API_TOKEN")); token != "" {
 		protocols = append(protocols, "hive-auth."+token)
 	}
 	c, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: allowed, Subprotocols: protocols})

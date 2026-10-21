@@ -123,7 +123,7 @@ Set environment variables before launching the backend. The local defaults keep 
 | `HIVE_REDIS_ADDR` | `127.0.0.1:<port>` | Redis bind address |
 | `HIVE_API_ADDR` | `127.0.0.1:<port>` | API bind address |
 | `HIVE_ALLOWED_ORIGINS` | Local Vite origins | Comma-separated browser origins allowed by CORS and WebSocket checks |
-| `HIVE_API_TOKEN` | unset | Optional bearer token for API and WebSocket. Required whenever `HIVE_API_ADDR` binds to a non-loopback address. Set the matching `VITE_HIVE_API_TOKEN` for the dashboard. |
+| `HIVE_API_TOKEN` | unset | Optional bearer token for API and WebSocket. Required whenever `HIVE_API_ADDR` binds to a non-loopback address. The dashboard prompts for it and keeps it in the current browser session. |
 | `HIVE_RETENTION_DAYS` | unset | Delete journal records older than this many days at startup; rotated and active JSONL files are both pruned. |
 | `VITE_WS_URL` | Derived from dashboard host | Optional WebSocket URL for a remote dashboard |
 | `VITE_HIVE_SITE_URL` | `http(s)://<dashboard-host>:8080/` | Optional URL used by the dashboard’s decoy-site preview |
@@ -151,7 +151,9 @@ export HIVE_API_TOKEN="$(openssl rand -hex 32)"
 docker compose up --build
 ```
 
-The dashboard is at `http://127.0.0.1:5173`. All published ports bind to loopback by default, telemetry persists in the `hive-data` volume, containers drop Linux capabilities, and the backend runs read-only except for its data volume. Keep the token private: the dashboard build includes it so the browser can authenticate. Change the token by rebuilding the dashboard and restarting the backend. Set `HIVE_RETENTION_DAYS` to control journal retention (30 days by default in Compose).
+The dashboard is at `http://127.0.0.1:5173`; enter the configured token when prompted. All published ports bind to loopback by default, telemetry persists in the `hive-data` volume, containers drop Linux capabilities, and the backend runs read-only except for its data volume. The dashboard does not embed the token in its static build. Change the token by restarting the backend and signing in again. Set `HIVE_RETENTION_DAYS` to control journal retention (30 days by default in Compose).
+
+For the container profile, `docker compose down -v` removes the persistent volume, including the event journal, SSH host key, blocklist, and STIX output. For a local run, remove the specific files listed under [Generated data](#generated-data) when you want to clear them.
 
 ## Generated data
 

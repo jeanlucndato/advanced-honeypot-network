@@ -192,6 +192,15 @@
 }
 .stat-card.health-warning strong,.stat-card.health-warning .stat-label{color:#ffad79}
 .stream-actions{display:flex;align-items:center;gap:9px}
+.auth-logout{margin-top:12px;padding:8px;border:1px solid #293447;border-radius:5px;background:transparent;color:#aab5c7;cursor:pointer}
+.auth-overlay{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:#050810d9;backdrop-filter:blur(7px)}
+.auth-card{width:min(390px,calc(100% - 36px));padding:28px;border:1px solid #29384c;border-radius:12px;background:#101826;color:#e6ebf4;box-shadow:0 24px 80px #0009}
+.auth-card>svg{color:#58dec4}
+.auth-card h2{margin:12px 0 5px;font-size:20px}
+.auth-card p{margin:0 0 20px;color:#91a0b5;font-size:13px}
+.auth-card label{display:grid;gap:7px;color:#aab5c7;font-size:12px}
+.auth-card input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #34445a;border-radius:6px;background:#0b111b;color:#f4f7fb;font:inherit}
+.auth-card button{width:100%;margin-top:15px;padding:10px;border:0;border-radius:6px;background:#c3f36b;color:#10180b;font-weight:700;cursor:pointer}
 .stream-card{
   overflow:hidden;
   border:1px solid #202a39;

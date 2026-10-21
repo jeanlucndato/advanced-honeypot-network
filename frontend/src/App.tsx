@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Activity, AlertTriangle, ArrowDownToLine, CircleDot, Database, Download, Globe2, Search, Shield, Terminal, Wifi, WifiOff } from 'lucide-react';
 import './App.css';
 
@@ -16,11 +16,13 @@ function App() {
   const [query, setQuery] = useState('');
   const [dropped, setDropped] = useState(0);
   const [journalErrors, setJournalErrors] = useState(0);
+  const [apiToken, setApiToken] = useState(() => sessionStorage.getItem('hive-api-token') ?? '');
+  const [tokenInput, setTokenInput] = useState('');
+  const [authRequired, setAuthRequired] = useState(false);
   const [activeView, setActiveView] = useState<'events' | 'website'>('events');
   const [sitePreviewKey, setSitePreviewKey] = useState(0);
   const wsAddress = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.hostname}:8000/ws/events`;
   const apiAddress = wsAddress.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:').replace(/\/ws\/events(?:\?.*)?$/, '');
-  const apiToken = import.meta.env.VITE_HIVE_API_TOKEN ?? '';
 
   useEffect(() => {
     let socket: WebSocket | undefined;
@@ -29,20 +31,13 @@ function App() {
     let retryDelay = 1000;
     const headers = apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined;
 
-    fetch(`${apiAddress}/api/events?limit=100`, { headers }).then((response) => response.ok ? response.json() : []).then((items: Event[]) => {
-      if (!stopped && Array.isArray(items)) setEvents((current) => {
-        const merged = new Map<string, Event>();
-        for (const item of items) merged.set(item.id, item);
-        for (const item of current) merged.set(item.id, item);
-        return [...merged.values()].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp)).slice(0, 500);
-      });
-    }).catch(() => undefined);
     const pollMetrics = () => fetch(`${apiAddress}/api/metrics`, { headers }).then((r) => r.ok ? r.json() : null).then((data) => {
       if (!stopped && data) {
         setDropped(Number(data.dropped_events ?? 0));
         setJournalErrors(Number(data.journal_errors ?? 0));
       }
     }).catch(() => undefined);
+    fetch(`${apiAddress}/api/health`, { headers }).then((response) => { if (response.status === 401) setAuthRequired(true); }).catch(() => undefined);
     pollMetrics();
     const metricsTimer = setInterval(pollMetrics, 10000);
 
@@ -74,7 +69,7 @@ function App() {
       const params = new URLSearchParams({ q: query, limit: '500' });
       if (filter !== 'all') params.set('service', filter);
       const headers = apiToken ? { Authorization: `Bearer ${apiToken}` } : undefined;
-      fetch(`${apiAddress}/api/search?${params}`, { headers }).then((response) => response.ok ? response.json() : null).then((result: { events?: Event[] } | null) => {
+      fetch(`${apiAddress}/api/search?${params}`, { headers }).then((response) => { if (response.status === 401) setAuthRequired(true); return response.ok ? response.json() : null; }).then((result: { events?: Event[] } | null) => {
         if (result?.events) setEvents((current) => {
           const merged = new Map(result.events!.map((item) => [item.id, item]));
           for (const item of current) if (!merged.has(item.id) && Date.now() - Date.parse(item.timestamp) < 30000) merged.set(item.id, item);
@@ -100,6 +95,14 @@ function App() {
     const blob = new Blob([rows.map((row) => row.map(csvCell).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'hive-events.csv'; link.click(); URL.revokeObjectURL(url);
   };
+  const authenticate = (formEvent: FormEvent<HTMLFormElement>) => {
+    formEvent.preventDefault();
+    const token = tokenInput.trim();
+    if (!token) return;
+    sessionStorage.setItem('hive-api-token', token);
+    setApiToken(token);
+    setAuthRequired(false);
+  };
 
   return (
     <div className="app-shell">
@@ -110,6 +113,7 @@ function App() {
         <button className={`nav-item ${activeView === 'website' ? 'active' : ''}`} aria-current={activeView === 'website' ? 'page' : undefined} onClick={() => setActiveView('website')}><Globe2 size={17} />Decoy website<span className="nav-live-dot" /></button>
         <div className="sidebar-spacer" />
         <div className="sensor-card"><span className="sensor-dot" /><div><strong>hive-01</strong><small>LOCAL SENSOR</small></div><CircleDot size={14} /></div>
+        {apiToken && <button className="auth-logout" onClick={() => { sessionStorage.removeItem('hive-api-token'); setApiToken(''); setAuthRequired(true); }}>Sign out</button>}
         <div className="sidebar-footer">HIVE · DEVELOPMENT BUILD</div>
       </aside>
 
@@ -160,6 +164,7 @@ function App() {
         <div className="safety-note"><Shield size={15} /><span>Honeypot telemetry can contain sensitive, attacker-supplied data. Restrict dashboard access and configure retention before external deployment.</span></div>
         </>}
       </main>
+      {authRequired && <div className="auth-overlay"><form className="auth-card" onSubmit={authenticate}><Shield size={25}/><h2>Dashboard access</h2><p>Enter the HIVE_API_TOKEN configured for this sensor.</p><label>API token<input autoFocus type="password" value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} autoComplete="current-password" /></label><button type="submit">Connect to Hive</button></form></div>}
     </div>
   );
 }

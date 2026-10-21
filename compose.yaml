@@ -11,6 +11,7 @@ services:
       HIVE_REDIS_ADDR: 0.0.0.0:6379
       HIVE_RETENTION_DAYS: ${HIVE_RETENTION_DAYS:-30}
       HIVE_EVENT_LOG: /app/data/events.jsonl
+    working_dir: /app/data
     ports:
       - "127.0.0.1:2222:2222"
       - "127.0.0.1:8080:8080"
@@ -24,23 +25,31 @@ services:
       - /tmp
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
     restart: unless-stopped
 
   dashboard:
     build:
       context: ./frontend
-      args:
-        VITE_HIVE_API_TOKEN: ${HIVE_API_TOKEN:?Set HIVE_API_TOKEN in your environment}
     ports:
-      - "127.0.0.1:5173:80"
+      - "127.0.0.1:5173:8080"
     depends_on: [hive]
     read_only: true
     tmpfs:
-      - /var/cache/nginx
-      - /var/run
-      - /tmp
+      - /var/cache/nginx:rw,noexec,nosuid,size=64m,uid=101,gid=101
+      - /var/run:rw,noexec,nosuid,size=1m,uid=101,gid=101
+      - /tmp:rw,noexec,nosuid,size=16m,uid=101,gid=101
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
     restart: unless-stopped
 
 volumes:

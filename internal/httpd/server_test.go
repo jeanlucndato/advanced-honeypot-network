@@ -4,6 +4,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"advance-honeypot-network/internal/event"
 )
 
 func TestDecoyPageContainsNoHostDynamicData(t *testing.T) {
@@ -23,8 +25,19 @@ func TestHTTPHoneypotPublishesBoundedRequest(t *testing.T) {
 	req := httptest.NewRequest("POST", "/wp-login.php", strings.NewReader(strings.Repeat("x", (64<<10)+8)))
 	req.RemoteAddr = "192.0.2.9:1234"
 	rr := httptest.NewRecorder()
+	event.InitBus()
+	sub := event.GlobalBus.Subscribe(1)
+	defer event.GlobalBus.Unsubscribe(sub)
 	newHandler().ServeHTTP(rr, req)
 	if rr.Code != 200 {
 		t.Fatalf("status=%d", rr.Code)
+	}
+	select {
+	case observed := <-sub:
+		if len(observed.Payload) > (64<<10)+256 {
+			t.Fatalf("oversized event payload: %d bytes", len(observed.Payload))
+		}
+	default:
+		t.Fatal("request did not publish an event")
 	}
 }
