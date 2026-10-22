@@ -1,12 +1,24 @@
-# Hive — Multi-Service Honeypot & Threat Telemetry Platform
+# Hive — Professional Multi-Service Honeypot
 
-**Hive is a professional-style cybersecurity honeypot built to observe, record, and review interactions with decoy services.** Four Go sensors emulate SSH, HTTP, MySQL, and Redis entry points. A React and TypeScript console turns probes and simulated user activity into searchable event telemetry, while a threat-intelligence pipeline produces STIX indicators and firewall suggestions for analyst review.
+**Hive turns activity against decoy services into a live, searchable security investigation workflow.** Four protocol-aware Go sensors observe SSH, HTTP, MySQL, and Redis interactions. A React and TypeScript console streams and searches captured events, while a threat-intelligence pipeline exports STIX 2.1 indicators and reviewable firewall suggestions.
 
-Hive is an end-to-end defensive security system: protocol-aware sensors publish normalized events to a concurrent event bus, which enriches, journals, and streams observations to the dashboard. The design emphasizes safe deception, bounded event delivery, and operator visibility.
+Built as a professional honeypot engineering project, Hive connects network protocol handling, event-driven backend design, threat-intelligence output, and an operator-focused interface. It is designed for controlled security monitoring and lab deployment; its service emulations and storage are intentionally scoped and documented below.
 
 **Stack:** Go · React · TypeScript · WebSockets · TCP/IP · JSONL · Docker Compose
 
 > **Run Hive as a sensor, not as infrastructure.** Its SSH, web, MySQL, and Redis services are decoys, not production servers. Keep the dashboard API private. For any network exposure, use a dedicated, isolated host that contains no production credentials or sensitive data. The fake SSH shell never runs commands on the host, and suggested firewall rules are never applied automatically.
+
+## Project overview
+
+| Capability | Implementation |
+|---|---|
+| **Deception surface** | SSH fake shell, interactive HTTP decoy site, MySQL handshake listener, and Redis RESP listener |
+| **Telemetry pipeline** | Normalized typed events, heuristic MITRE ATT&CK tags, bounded subscriber fan-out, and rotating JSONL history |
+| **Investigation console** | Live WebSocket stream, retained-history search, service filters, event detail panel, health metrics, and CSV export |
+| **Threat-intelligence output** | Deduplicated source IP observations exported as STIX 2.1 indicators and manual-review firewall suggestions |
+| **Deployment safeguards** | Loopback-first local defaults, API bearer-token enforcement for non-loopback binds, and a restricted Docker Compose profile |
+
+**Engineering focus:** each sensor speaks a different protocol, but all observations enter the same event pipeline. Bounded queues keep slow dashboard clients from blocking sensors; durable journal history remains searchable even when a browser reconnects. The SSH decoy simulates a shell without executing commands on the host.
 
 ## Hive in action
 
@@ -38,9 +50,6 @@ The terminal captures show the Go services running and a client interacting with
 </p>
 <p align="center">
   <img src="img/terminal%20ssh.png" alt="SSH client interacting with the Hive simulated shell" width="80%">
-</p>
-<p align="center">
-  <img src="img/frontend%20dashbord.png" alt="Hive frontend dashboard monitoring captured events" width="100%">
 </p>
 
 ### Try the workflow
