@@ -33,6 +33,18 @@ Hive is a standout project in this portfolio. Its case study describes an end-to
 
 The Hive case study includes [dashboard and decoy-site screenshots](hive.html). This repository contains the portfolio website and case-study material; it does not contain Hive’s Go backend or React application source.
 
+### Hive screenshots
+
+<p align="center">
+  <img src="assets/img/hive/Hive%20dashboard.png" alt="Hive dashboard showing captured events and live telemetry" width="100%">
+</p>
+<p align="center">
+  <img src="assets/img/hive/Decoy%20website%20landing%20page.png" alt="Inversehacker decoy website landing page served by Hive" width="100%">
+</p>
+<p align="center">
+  <img src="assets/img/hive/Hive%20Decoy%20website.png" alt="Hive dashboard with the decoy website open in its preview" width="100%">
+</p>
+
 ## Skills represented
 
 - **Blue Team and SOC:** log collection, endpoint telemetry, SIEM workflows, alert investigation, and IDS/IPS concepts.
