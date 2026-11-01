@@ -52,6 +52,10 @@ The terminal captures show the Go services running and a client interacting with
   <img src="img/terminal%20ssh.png" alt="SSH client interacting with the Hive simulated shell" width="80%">
 </p>
 
+<p align="center">
+  <video src="img/video%20demo%20how%20it%20works%20honeypot.mp4" width="100%" autoplay loop muted playsinline></video>
+</p>
+
 ### Try the workflow
 
 Run Hive locally, then open the dashboard and try the short walkthrough:
