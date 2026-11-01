@@ -53,8 +53,11 @@ The terminal captures show the Go services running and a client interacting with
 </p>
 
 <p align="center">
-  <video src="img/video%20demo%20how%20it%20works%20honeypot.mp4" width="100%" autoplay loop muted playsinline></video>
+  <a href="img/video%20demo%20how%20it%20works%20honeypot.mp4" target="_blank">
+    <img src="img/Hive%20dashboard.png" alt="Click to watch the honeypot video demonstration" width="100%">
+  </a>
 </p>
+<p align="center"><em>👆 Click on the image to watch the full video demonstration</em></p>
 
 ### Try the workflow
 
